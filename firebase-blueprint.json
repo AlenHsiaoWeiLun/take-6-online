@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName"]
+    },
+    "GameRoom": {
+      "title": "Game Room",
+      "description": "Stores the state of a game room",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string", "enum": ["LOBBY", "PLAYING", "FINISHED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "playerCount": { "type": "number" }
+      },
+      "required": ["id", "name", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/rooms/{roomId}": {
+      "schema": "GameRoom",
+      "description": "Game room documents"
+    }
+  }
+}

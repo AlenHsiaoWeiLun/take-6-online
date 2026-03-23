@@ -1,0 +1,7 @@
+{
+  "name": "take-6-online",
+  "description": "A high-quality, multiplayer Take 6 (6 nimmt!) web application with bots and smooth animations.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

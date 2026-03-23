@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: take6-online
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FAI_PYTHON_BIN
+        value: python3
+      - key: FAI_AGENT_ROOT
+        value: ./2026-FAI-Final-Release-main
+      - key: FAI_AGENT_MODULE
+        value: src.players.TA.random_player
+      - key: FAI_AGENT_CLASS
+        value: RandomPlayer
+      - key: FAI_AGENT_ARGS
+        value: "{}"
+      - key: FAI_AGENT_TIMEOUT_MS
+        value: "1500"

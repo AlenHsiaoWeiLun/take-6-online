@@ -1,0 +1,10 @@
+node_modules
+dist
+.git
+.github
+.firebase
+.env
+npm-debug.log
+*.pyc
+__pycache__
+public
