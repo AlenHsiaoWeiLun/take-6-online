@@ -348,8 +348,26 @@ export class GameManager {
     const targetRowIndex = findTargetRow(sub.card, this.status.rows);
 
     if (targetRowIndex === -1) {
-      const forcedRowIndex = this.findForcedRowIndex();
-      this.takeRow(sub.playerIndex, forcedRowIndex, sub.card);
+      const player = this.status.players[sub.playerIndex];
+      this.broadcastState();
+
+      setTimeout(() => {
+        if (this.status.state !== GameState.RESOLVING) return;
+        if (this.status.resolvingCardIndex !== currentIndex) return;
+
+        this.status.state = GameState.WAITING_ROW_CHOICE;
+        this.status.activePlayerIndex = sub.playerIndex;
+        this.broadcastState();
+
+        if (player?.isBot) {
+          const forcedRowIndex = this.findForcedRowIndex();
+          setTimeout(() => {
+            if (this.status.state !== GameState.WAITING_ROW_CHOICE) return;
+            if (this.status.activePlayerIndex !== sub.playerIndex) return;
+            this.handleRowChoice(player, forcedRowIndex);
+          }, 300);
+        }
+      }, 900);
     } else {
       const row = this.status.rows[targetRowIndex];
       if (row.cards.length >= 5) {

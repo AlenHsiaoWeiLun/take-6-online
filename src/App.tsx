@@ -92,7 +92,7 @@ export default function App() {
       };
     })
     .filter((entry): entry is { player: NonNullable<typeof state.players[number]>; index: number; score: number; isWinner: boolean } => entry !== null)
-    .sort((a, b) => b.score - a.score || a.index - b.index);
+    .sort((a, b) => a.score - b.score || a.index - b.index);
 
   return (
     <div className="h-screen bg-slate-950 text-white overflow-hidden font-sans selection:bg-indigo-500/30 flex flex-col">
@@ -413,16 +413,39 @@ export default function App() {
                   Final Standings
                 </div>
                 <h2 className="text-4xl sm:text-5xl font-black mb-2 tracking-tighter italic">GAME OVER</h2>
-                <p className="text-sm text-slate-400 mb-8">Ranking is sorted from highest score to lowest score.</p>
+                <p className="text-sm text-slate-400 mb-8">Lower bullheads rank higher. The cleanest run wins.</p>
               </div>
               
               <div className="space-y-3 mb-10">
                 {finalStandings.map(({ player, index, score, isWinner }, rank) => {
                   const rankLabel = `#${rank + 1}`;
-                  const isTopRow = rank === 0;
-                  const rowClassName = isTopRow
-                    ? 'border-red-400/50 bg-red-500/10 shadow-[0_0_30px_rgba(239,68,68,0.12)]'
-                    : 'border-white/10 bg-white/5';
+                  const medalStyles = [
+                    {
+                      row: 'border-yellow-300/50 bg-yellow-400/10 shadow-[0_0_30px_rgba(250,204,21,0.16)]',
+                      badge: 'border-yellow-200/50 bg-yellow-300/20 text-yellow-50',
+                      avatar: 'border-yellow-200/40',
+                      score: 'border-yellow-200/40 bg-yellow-300/10',
+                      label: 'Champion'
+                    },
+                    {
+                      row: 'border-slate-300/40 bg-slate-200/10 shadow-[0_0_24px_rgba(226,232,240,0.12)]',
+                      badge: 'border-slate-200/40 bg-slate-200/15 text-slate-100',
+                      avatar: 'border-slate-200/30',
+                      score: 'border-slate-200/30 bg-slate-200/10',
+                      label: 'Silver'
+                    },
+                    {
+                      row: 'border-orange-300/40 bg-orange-400/10 shadow-[0_0_24px_rgba(251,146,60,0.12)]',
+                      badge: 'border-orange-200/40 bg-orange-300/15 text-orange-50',
+                      avatar: 'border-orange-200/30',
+                      score: 'border-orange-200/30 bg-orange-300/10',
+                      label: 'Bronze'
+                    }
+                  ][rank] || null;
+                  const rowClassName = medalStyles?.row || 'border-white/10 bg-white/5';
+                  const badgeClassName = medalStyles?.badge || 'border-white/10 bg-white/5 text-slate-300';
+                  const avatarClassName = medalStyles?.avatar || 'border-white/20';
+                  const scoreClassName = medalStyles?.score || 'border-white/10 bg-slate-950/50';
 
                   return (
                     <div
@@ -430,10 +453,10 @@ export default function App() {
                       className={`relative flex items-center justify-between rounded-[1.75rem] border px-4 py-4 sm:px-5 ${rowClassName}`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border text-sm font-black ${isTopRow ? 'border-red-300/40 bg-red-400/15 text-red-100' : 'border-white/10 bg-white/5 text-slate-300'}`}>
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border text-sm font-black ${badgeClassName}`}>
                           {rankLabel}
                         </div>
-                        <img src={player.avatar} className={`w-12 h-12 rounded-2xl border-2 object-cover ${isTopRow ? 'border-red-300/40' : 'border-white/20'}`} alt="" />
+                        <img src={player.avatar} className={`w-12 h-12 rounded-2xl border-2 object-cover ${avatarClassName}`} alt="" />
                         <div className="text-left">
                           <div className="flex items-center gap-2">
                             <div className="font-black text-white">{player.name}</div>
@@ -444,11 +467,11 @@ export default function App() {
                             )}
                           </div>
                           <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
-                            {isTopRow ? 'Highest Score' : 'Final Score'}
+                            {medalStyles?.label || 'Final Score'}
                           </div>
                         </div>
                       </div>
-                      <div className={`flex items-center gap-2 rounded-2xl border px-4 py-2 ${isTopRow ? 'border-red-300/30 bg-red-400/10' : 'border-white/10 bg-slate-950/50'}`}>
+                      <div className={`flex items-center gap-2 rounded-2xl border px-4 py-2 ${scoreClassName}`}>
                         <BullHeadIcon className="w-5 h-5 text-red-500" />
                         <span className="text-2xl font-black font-mono text-white">{score}</span>
                       </div>
