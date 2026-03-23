@@ -81,6 +81,18 @@ export default function App() {
   }, []);
 
   const emotes = ['shock', 'laugh', 'angry', 'cool'];
+  const finalStandings = state.players
+    .map((player, index) => {
+      if (!player) return null;
+      return {
+        player,
+        index,
+        score: state.scores[index],
+        isWinner: !!state.winners?.includes(index)
+      };
+    })
+    .filter((entry): entry is { player: NonNullable<typeof state.players[number]>; index: number; score: number; isWinner: boolean } => entry !== null)
+    .sort((a, b) => b.score - a.score || a.index - b.index);
 
   return (
     <div className="h-screen bg-slate-950 text-white overflow-hidden font-sans selection:bg-indigo-500/30 flex flex-col">
@@ -390,26 +402,55 @@ export default function App() {
             <motion.div
               initial={{ scale: 0.8, y: 50 }}
               animate={{ scale: 1, y: 0 }}
-              className="bg-slate-900 border border-slate-800 p-12 rounded-[4rem] shadow-2xl max-w-2xl w-full text-center"
+              className="relative overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(248,113,113,0.18),_transparent_40%),linear-gradient(180deg,_rgba(15,23,42,0.98),_rgba(2,6,23,0.98))] border border-slate-700 p-8 sm:p-12 rounded-[3rem] shadow-2xl max-w-3xl w-full text-center"
             >
-              <h2 className="text-5xl font-black mb-8 tracking-tighter italic">GAME OVER</h2>
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-amber-300 to-indigo-500" />
+              <div className="absolute -top-12 right-10 h-32 w-32 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-12 left-10 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+
+              <div className="relative">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-1 text-[10px] font-black uppercase tracking-[0.3em] text-amber-100">
+                  Final Standings
+                </div>
+                <h2 className="text-4xl sm:text-5xl font-black mb-2 tracking-tighter italic">GAME OVER</h2>
+                <p className="text-sm text-slate-400 mb-8">Ranking is sorted from highest score to lowest score.</p>
+              </div>
               
-              <div className="space-y-4 mb-12">
-                {state.players.map((p, i) => {
-                  if (!p) return null;
-                  const isWinner = state.winners?.includes(i);
+              <div className="space-y-3 mb-10">
+                {finalStandings.map(({ player, index, score, isWinner }, rank) => {
+                  const rankLabel = `#${rank + 1}`;
+                  const isTopRow = rank === 0;
+                  const rowClassName = isTopRow
+                    ? 'border-red-400/50 bg-red-500/10 shadow-[0_0_30px_rgba(239,68,68,0.12)]'
+                    : 'border-white/10 bg-white/5';
+
                   return (
-                    <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border ${isWinner ? 'bg-yellow-400/10 border-yellow-400/50' : 'bg-white/5 border-white/10'}`}>
+                    <div
+                      key={index}
+                      className={`relative flex items-center justify-between rounded-[1.75rem] border px-4 py-4 sm:px-5 ${rowClassName}`}
+                    >
                       <div className="flex items-center gap-4">
-                        <img src={p.avatar} className="w-12 h-12 rounded-full border-2 border-white/20" alt="" />
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border text-sm font-black ${isTopRow ? 'border-red-300/40 bg-red-400/15 text-red-100' : 'border-white/10 bg-white/5 text-slate-300'}`}>
+                          {rankLabel}
+                        </div>
+                        <img src={player.avatar} className={`w-12 h-12 rounded-2xl border-2 object-cover ${isTopRow ? 'border-red-300/40' : 'border-white/20'}`} alt="" />
                         <div className="text-left">
-                          <div className="font-bold">{p.name}</div>
-                          <div className="text-[10px] uppercase text-white/40">{isWinner ? 'Winner' : 'Player'}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-black text-white">{player.name}</div>
+                            {isWinner && (
+                              <span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-100">
+                                Winner
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-[0.25em] text-slate-500">
+                            {isTopRow ? 'Highest Score' : 'Final Score'}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className={`flex items-center gap-2 rounded-2xl border px-4 py-2 ${isTopRow ? 'border-red-300/30 bg-red-400/10' : 'border-white/10 bg-slate-950/50'}`}>
                         <BullHeadIcon className="w-5 h-5 text-red-500" />
-                        <span className="text-2xl font-black font-mono">{state.scores[i]}</span>
+                        <span className="text-2xl font-black font-mono text-white">{score}</span>
                       </div>
                     </div>
                   );
@@ -418,7 +459,7 @@ export default function App() {
 
               <button
                 onClick={resetGame}
-                className="bg-white text-slate-950 px-12 py-4 rounded-2xl font-black text-lg hover:bg-indigo-400 hover:text-white transition-all shadow-xl"
+                className="bg-white text-slate-950 px-12 py-4 rounded-2xl font-black text-lg hover:bg-indigo-400 hover:text-white transition-all shadow-xl shadow-indigo-500/20"
               >
                 PLAY AGAIN
               </button>

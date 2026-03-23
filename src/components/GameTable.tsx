@@ -123,7 +123,7 @@ export const GameTable: React.FC = () => {
                       key={`revealed-${i}`}
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ 
-                        scale: isResolving ? 1.8 : 1.2, 
+                        scale: isResolving ? 1.45 : 1.05, 
                         opacity: 1,
                         zIndex: isResolving ? 100 : 10,
                       }}
@@ -147,12 +147,11 @@ export const GameTable: React.FC = () => {
                               <img src={state.players[i]?.avatar} className="w-8 h-8 rounded-full border-2 border-indigo-400" alt="" />
                               <span className="text-sm font-black text-white tracking-tight">{state.players[i]?.name}</span>
                             </div>
-                            <div className="text-[10px] uppercase font-black text-indigo-400 tracking-[0.2em] animate-pulse">Placing Card</div>
                           </motion.div>
                         )}
                       </AnimatePresence>
                       
-                      <Card card={sub.card} isResolving={isResolving} className="w-16 h-22 xs:w-20 h-28 sm:w-28 sm:h-40 md:w-36 md:h-52 lg:w-44 lg:h-64 shadow-[0_20px_50px_rgba(0,0,0,0.5)]" />
+                      <Card card={sub.card} isResolving={isResolving} className="w-14 h-20 xs:w-18 xs:h-26 sm:w-24 sm:h-34 md:w-30 md:h-44 lg:w-36 lg:h-52 shadow-[0_20px_50px_rgba(0,0,0,0.5)]" />
                       
                       {isRevealing && (
                         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs font-black text-white bg-slate-900/80 px-3 py-1 rounded-full whitespace-nowrap backdrop-blur-sm border border-white/10">
