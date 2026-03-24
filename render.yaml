@@ -12,12 +12,12 @@ services:
       - key: FAI_PYTHON_BIN
         value: python3
       - key: FAI_AGENT_ROOT
-        value: .
+        value: ./2026-FAI-Final-Release-main
       - key: FAI_AGENT_MODULE
-        value: server.agents.rl6_nimmt_adapter
+        value: src.players.TA.random_player
       - key: FAI_AGENT_CLASS
-        value: RL6NimmtAgentAdapter
+        value: RandomPlayer
       - key: FAI_AGENT_ARGS
-        value: '{"repo_root":"./vendor/rl-6-nimmt","agent_name":"mcts","agent_kwargs":{"mc_per_card":3,"mc_max":30}}'
+        value: "{}"
       - key: FAI_AGENT_TIMEOUT_MS
         value: "5000"

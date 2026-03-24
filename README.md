@@ -58,10 +58,20 @@ Deploy flow:
 
 Because the frontend and backend are served by the same Render service, you do not need `VITE_SERVER_URL` for the Render deployment.
 
+The default Render configuration uses the lightweight `RandomPlayer` bot so Docker builds stay small and reliable on the free tier. The RL adapter remains available for local development or custom deployments with extra Python dependencies.
+
 ## Bot Backend
 Bots call a Python worker that loads a configurable agent class and passes it the current `hand/history`.
 
 Default agent env:
+```bash
+FAI_AGENT_ROOT=./2026-FAI-Final-Release-main
+FAI_AGENT_MODULE=src.players.TA.random_player
+FAI_AGENT_CLASS=RandomPlayer
+FAI_AGENT_ARGS={}
+```
+
+If you want to switch to the vendored RL adapter:
 ```bash
 FAI_AGENT_ROOT=.
 FAI_AGENT_MODULE=server.agents.rl6_nimmt_adapter
@@ -69,15 +79,7 @@ FAI_AGENT_CLASS=RL6NimmtAgentAdapter
 FAI_AGENT_ARGS={"repo_root":"./vendor/rl-6-nimmt","agent_name":"mcts","agent_kwargs":{"mc_per_card":3,"mc_max":30}}
 ```
 
-This adapter vendors [`johannbrehmer/rl-6-nimmt`](https://github.com/johannbrehmer/rl-6-nimmt) and maps this app's live board state into that repo's Gym-style observation format. The vendored repo does not include trained checkpoints, so the default integration uses its Monte Carlo search agent (`mcts`) rather than a saved neural policy.
-
-If you want to switch back to the 2026 FAI final random player:
-```bash
-FAI_AGENT_ROOT=./2026-FAI-Final-Release-main
-FAI_AGENT_MODULE=src.players.TA.random_player
-FAI_AGENT_CLASS=RandomPlayer
-FAI_AGENT_ARGS={}
-```
+This adapter vendors [`johannbrehmer/rl-6-nimmt`](https://github.com/johannbrehmer/rl-6-nimmt) and maps this app's live board state into that repo's Gym-style observation format. It requires extra Python dependencies such as `numpy`, `gym`, and `torch`, so it is not enabled by default in the Render blueprint.
 
 ## How to Play
 1. Join a seat at the table.
