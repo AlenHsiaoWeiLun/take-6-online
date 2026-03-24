@@ -14,7 +14,6 @@ interface GameContextType {
   isAuthReady: boolean;
   joinSeat: (index: number) => void;
   leaveSeat: () => void;
-  addBot: (index: number) => void;
   startGame: () => void;
   selectCard: (value: number) => void;
   chooseRow: (index: number) => void;
@@ -78,16 +77,23 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState(prev => {
         const myId = user?.uid || localStorage.getItem('take6_session_id');
         const mySeat = status.players.findIndex(p => p?.id === myId);
+        const resolvedSeatIndex = mySeat === -1 ? prev.mySeatIndex : mySeat as any;
+        const shouldClearPrivateState = status.state === 'LOBBY' && mySeat === -1;
         return {
           ...prev,
           ...status,
-          mySeatIndex: mySeat === -1 ? null : mySeat as any
+          mySeatIndex: resolvedSeatIndex,
+          myHand: shouldClearPrivateState ? [] : prev.myHand
         };
       });
     });
 
-    newSocket.on('myHand', (hand: Card[]) => {
-      setState(prev => ({ ...prev, myHand: hand }));
+    newSocket.on('myHand', ({ seatIndex, hand }: { seatIndex: number; hand: Card[] }) => {
+      setState(prev => ({
+        ...prev,
+        mySeatIndex: seatIndex,
+        myHand: hand
+      }));
     });
 
     newSocket.on('animation', (event: AnimationEvent) => {
@@ -103,7 +109,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const joinSeat = (index: number) => socket?.emit('joinSeat', index);
   const leaveSeat = () => socket?.emit('leaveSeat');
-  const addBot = (index: number) => socket?.emit('addBot', index);
   const startGame = () => socket?.emit('startGame');
   const selectCard = (value: number) => socket?.emit('selectCard', value);
   const chooseRow = (index: number) => socket?.emit('chooseRow', index);
@@ -138,7 +143,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <GameContext.Provider value={{ 
-      state, socket, user, isAuthReady, joinSeat, leaveSeat, addBot, startGame, selectCard, chooseRow, sendEmote, resetGame, setMaxPlayers, login, signOut, updateProfile
+      state, socket, user, isAuthReady, joinSeat, leaveSeat, startGame, selectCard, chooseRow, sendEmote, resetGame, setMaxPlayers, login, signOut, updateProfile
     }}>
       {children}
     </GameContext.Provider>

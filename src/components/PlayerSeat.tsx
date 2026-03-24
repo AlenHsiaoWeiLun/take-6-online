@@ -15,7 +15,7 @@ interface PlayerSeatProps {
 }
 
 export const PlayerSeat: React.FC<PlayerSeatProps> = ({ seatIndex }) => {
-  const { state, joinSeat, addBot, leaveSeat } = useGame();
+  const { state, joinSeat, leaveSeat } = useGame();
   const player = state.players[seatIndex];
   const isMe = state.mySeatIndex === seatIndex;
   const isWaitingRowChoice = state.state === 'WAITING_ROW_CHOICE' && state.activePlayerIndex === seatIndex;
@@ -59,12 +59,6 @@ export const PlayerSeat: React.FC<PlayerSeatProps> = ({ seatIndex }) => {
             className="bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
           >
             JOIN SEAT
-          </button>
-          <button
-            onClick={() => addBot(seatIndex)}
-            className="bg-slate-800/50 hover:bg-slate-800 text-slate-500 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all"
-          >
-            + ADD BOT
           </button>
         </div>
       </div>

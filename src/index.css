@@ -5,6 +5,11 @@
   --font-sans: "Kalam", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Caveat", ui-monospace, SFMono-Regular, monospace;
   --breakpoint-xs: 480px;
+  --color-bg-950: #07111a;
+  --color-bg-900: #0d1a24;
+  --color-sheen: rgba(255, 243, 214, 0.08);
+  --color-emerald-haze: rgba(45, 212, 191, 0.12);
+  --color-amber-haze: rgba(245, 158, 11, 0.1);
 }
 
 html, body, #root {
@@ -17,12 +22,171 @@ html, body, #root {
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-200 antialiased;
-    background-image: url('https://www.transparenttextures.com/patterns/stucco.png');
+    @apply text-slate-200 antialiased;
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.05), transparent 30%),
+      radial-gradient(circle at 18% 18%, var(--color-amber-haze), transparent 24%),
+      radial-gradient(circle at 82% 14%, rgba(96, 165, 250, 0.1), transparent 26%),
+      radial-gradient(circle at 50% 115%, rgba(16, 185, 129, 0.16), transparent 42%),
+      linear-gradient(180deg, #13202b 0%, var(--color-bg-900) 38%, var(--color-bg-950) 100%);
+    background-attachment: fixed;
+  }
+
+  body::before,
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -2;
+  }
+
+  body::before {
+    opacity: 0.32;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 0,
+        rgba(255, 255, 255, 0.03) 1px,
+        transparent 1px,
+        transparent 120px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        rgba(255, 255, 255, 0.02) 0,
+        rgba(255, 255, 255, 0.02) 1px,
+        transparent 1px,
+        transparent 120px
+      );
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 85%);
+  }
+
+  body::after {
+    z-index: -1;
+    background:
+      radial-gradient(circle at center, transparent 48%, rgba(0, 0, 0, 0.22) 100%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 18%);
   }
 }
 
 @layer utilities {
+  .app-shell {
+    background:
+      radial-gradient(circle at top, rgba(255, 255, 255, 0.03), transparent 26%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 22%);
+    isolation: isolate;
+  }
+
+  .app-ambient {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .app-ambient::before,
+  .app-ambient::after {
+    content: "";
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.5;
+  }
+
+  .app-ambient::before {
+    width: 32rem;
+    height: 32rem;
+    top: -8rem;
+    left: -6rem;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.16), transparent 65%);
+  }
+
+  .app-ambient::after {
+    width: 38rem;
+    height: 38rem;
+    right: -10rem;
+    bottom: -14rem;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.16), transparent 65%);
+  }
+
+  .ambient-mesh {
+    position: absolute;
+    inset: 0;
+    opacity: 0.2;
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 38%),
+      radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.05), transparent 30%);
+  }
+
+  .ambient-grain {
+    position: absolute;
+    inset: 0;
+    opacity: 0.08;
+    background:
+      repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.08) 0,
+        rgba(255, 255, 255, 0.08) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+    mix-blend-mode: soft-light;
+  }
+
+  .game-stage {
+    background:
+      radial-gradient(circle at 50% 45%, rgba(16, 185, 129, 0.12), transparent 34%),
+      radial-gradient(circle at 80% 0%, rgba(59, 130, 246, 0.08), transparent 24%);
+  }
+
+  .luxury-panel {
+    background:
+      linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.78)),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 40%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 24px 80px rgba(2, 6, 23, 0.45);
+  }
+
+  .luxury-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(120deg, rgba(255, 255, 255, 0.08), transparent 25%),
+      radial-gradient(circle at top right, rgba(245, 158, 11, 0.08), transparent 28%);
+    pointer-events: none;
+  }
+
+  .table-surface {
+    background:
+      radial-gradient(circle at top, rgba(52, 211, 153, 0.08), transparent 34%),
+      linear-gradient(180deg, rgba(17, 24, 39, 0.55), rgba(2, 6, 23, 0.42));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+      0 30px 80px rgba(2, 6, 23, 0.4);
+  }
+
+  .table-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(circle at center, rgba(45, 212, 191, 0.06), transparent 42%),
+      repeating-linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.025) 0,
+        rgba(255, 255, 255, 0.025) 1px,
+        transparent 1px,
+        transparent 10px
+      );
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
   .text-shadow-glow {
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
   }

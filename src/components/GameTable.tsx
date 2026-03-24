@@ -16,12 +16,7 @@ export const GameTable: React.FC = () => {
   const isChoosing = state.state === 'WAITING_ROW_CHOICE' && state.mySeatIndex === state.activePlayerIndex;
 
   return (
-    <div className="relative w-full h-full max-w-6xl max-h-full bg-slate-900/20 rounded-[2rem] border border-slate-800/50 p-2 sm:p-4 flex flex-col justify-center gap-1 sm:gap-2 backdrop-blur-sm shadow-2xl overflow-hidden">
-      {/* Table Surface Texture */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none overflow-hidden rounded-[2rem]">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
-      </div>
-
+    <div className="table-surface relative w-full h-full max-w-6xl max-h-full rounded-[2rem] border border-white/8 p-2 sm:p-4 flex flex-col justify-center gap-1 sm:gap-2 backdrop-blur-sm overflow-hidden">
       {state.rows.map((row, rowIndex) => {
         const isJustTaken = state.lastAnimationEvent?.type === 'TAKE_ROW' && 
                             state.lastAnimationEvent.rowIndex === rowIndex && 

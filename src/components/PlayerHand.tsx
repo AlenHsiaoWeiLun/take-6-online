@@ -6,10 +6,11 @@ import { Card } from './Card';
 export const PlayerHand: React.FC = () => {
   const { state, selectCard } = useGame();
   
-  if (state.mySeatIndex === null || state.state === 'LOBBY') return null;
+  if ((state.mySeatIndex === null && state.myHand.length === 0) || state.state === 'LOBBY') return null;
 
-  const isMyTurn = state.state === 'SELECTING' && !state.submittedCards[state.mySeatIndex];
-  const mySubmittedCard = state.submittedCards[state.mySeatIndex];
+  const mySeatIndex = state.mySeatIndex;
+  const isMyTurn = mySeatIndex !== null && state.state === 'SELECTING' && !state.submittedCards[mySeatIndex];
+  const mySubmittedCard = mySeatIndex !== null ? state.submittedCards[mySeatIndex] : null;
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-end px-2 sm:px-8 pb-1 sm:pb-2 overflow-hidden">

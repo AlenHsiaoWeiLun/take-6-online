@@ -26,8 +26,19 @@ def load_agent():
     module = importlib.import_module(module_name)
     cls = getattr(module, class_name)
     if args:
-        return cls(player_idx=player_idx, **args)
-    return cls(player_idx=player_idx)
+        try:
+            return cls(player_idx=player_idx, **args)
+        except TypeError as exc:
+            if "player_idx" not in str(exc):
+                raise
+            return cls(**args)
+
+    try:
+        return cls(player_idx=player_idx)
+    except TypeError as exc:
+        if "player_idx" not in str(exc):
+            raise
+        return cls()
 
 
 def main():

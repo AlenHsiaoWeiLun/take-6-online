@@ -21,11 +21,10 @@ A high-quality, multiplayer Take 6 web application built with React, Node.js, an
    ```bash
    npm install
    ```
-2. If you want the 2026 FAI agent backend, install the Python dependencies as well:
+2. If you want the bot backend, install the Python dependencies as well:
    ```bash
-   cd 2026-FAI-Final-Release-main
-   pip install -r requirements.txt
-   cd ..
+   pip install numpy gym==0.26.2
+   pip install --index-url https://download.pytorch.org/whl/cpu torch
    ```
 3. Start the development server (runs both frontend and backend):
    ```bash
@@ -59,18 +58,26 @@ Deploy flow:
 
 Because the frontend and backend are served by the same Render service, you do not need `VITE_SERVER_URL` for the Render deployment.
 
-## 2026 FAI Agent Backend
-Bots now call a Python worker that loads a 2026 FAI final compatible player class and passes it the same `hand/history` structure expected by the final framework.
+## Bot Backend
+Bots call a Python worker that loads a configurable agent class and passes it the current `hand/history`.
 
 Default agent env:
+```bash
+FAI_AGENT_ROOT=.
+FAI_AGENT_MODULE=server.agents.rl6_nimmt_adapter
+FAI_AGENT_CLASS=RL6NimmtAgentAdapter
+FAI_AGENT_ARGS={"repo_root":"./vendor/rl-6-nimmt","agent_name":"mcts","agent_kwargs":{"mc_per_card":3,"mc_max":30}}
+```
+
+This adapter vendors [`johannbrehmer/rl-6-nimmt`](https://github.com/johannbrehmer/rl-6-nimmt) and maps this app's live board state into that repo's Gym-style observation format. The vendored repo does not include trained checkpoints, so the default integration uses its Monte Carlo search agent (`mcts`) rather than a saved neural policy.
+
+If you want to switch back to the 2026 FAI final random player:
 ```bash
 FAI_AGENT_ROOT=./2026-FAI-Final-Release-main
 FAI_AGENT_MODULE=src.players.TA.random_player
 FAI_AGENT_CLASS=RandomPlayer
 FAI_AGENT_ARGS={}
 ```
-
-To switch to your own final agent, replace `FAI_AGENT_MODULE` and `FAI_AGENT_CLASS`.
 
 ## How to Play
 1. Join a seat at the table.

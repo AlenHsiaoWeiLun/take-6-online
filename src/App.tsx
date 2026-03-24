@@ -95,10 +95,11 @@ export default function App() {
     .sort((a, b) => a.score - b.score || a.index - b.index);
 
   return (
-    <div className="h-screen bg-slate-950 text-white overflow-hidden font-sans selection:bg-indigo-500/30 flex flex-col">
+    <div className="app-shell h-screen text-white overflow-hidden font-sans selection:bg-indigo-500/30 flex flex-col">
       {/* Background Decor */}
-      <div className="fixed inset-0 pointer-events-none opacity-20">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/notebook.png')]"></div>
+      <div className="app-ambient">
+        <div className="ambient-mesh" />
+        <div className="ambient-grain" />
       </div>
 
       {/* Header / HUD */}
@@ -261,16 +262,15 @@ export default function App() {
         </aside>
 
         {/* Game Content Area */}
-        <div className="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(circle_at_center,_var(--tw-gradient-from)_0%,_transparent_70%)] from-indigo-500/5 min-h-0">
+        <div className="game-stage flex-1 flex flex-col relative overflow-hidden min-h-0">
           {state.state === 'LOBBY' ? (
             <div className="flex-1 flex items-center justify-center p-4 sm:p-8 min-h-0">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="max-w-xl w-full max-h-full bg-slate-900/80 backdrop-blur-2xl rounded-[2.5rem] border border-slate-700 p-8 sm:p-16 shadow-2xl relative overflow-hidden flex flex-col justify-center"
+                className="luxury-panel max-w-xl w-full max-h-full backdrop-blur-2xl rounded-[2.5rem] border border-white/10 p-8 sm:p-16 relative overflow-hidden flex flex-col justify-center"
               >
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-indigo-500 to-emerald-500" />
-                <div className="absolute inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
                 
                 <div className="relative z-10 text-center">
                   <motion.div 

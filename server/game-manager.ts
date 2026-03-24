@@ -72,10 +72,6 @@ export class GameManager {
       this.leaveSeat(player!);
     });
 
-    socket.on("addBot", (seatIndex: number) => {
-      this.addBot(seatIndex as SeatIndex);
-    });
-
     socket.on("setMaxPlayers", (count: number) => {
       if (this.status.state !== GameState.LOBBY) return;
       if (count < 2 || count > 10) return;
@@ -116,7 +112,7 @@ export class GameManager {
     });
 
     socket.on("resetGame", () => {
-        if (this.status.state === GameState.GAME_END) {
+        if (this.status.state !== GameState.LOBBY) {
             this.resetToLobby();
         }
     });
@@ -152,10 +148,16 @@ export class GameManager {
     // Send private hands to each player
     this.status.players.forEach((p, index) => {
       if (p && !p.isBot) {
-        const socketId = Array.from(this.players.entries()).find(([_, player]) => player.id === p.id)?.[0];
-        if (socketId) {
-          this.io.to(socketId).emit("myHand", this.hands.get(index) || []);
-        }
+        const matchingSocketIds = Array.from(this.players.entries())
+          .filter(([_, player]) => player.id === p.id)
+          .map(([socketId]) => socketId);
+
+        matchingSocketIds.forEach((socketId) => {
+          this.io.to(socketId).emit("myHand", {
+            seatIndex: index,
+            hand: this.hands.get(index) || []
+          });
+        });
       }
     });
   }
@@ -349,25 +351,15 @@ export class GameManager {
 
     if (targetRowIndex === -1) {
       const player = this.status.players[sub.playerIndex];
+      const forcedRowIndex = this.findForcedRowIndex();
+      this.io.emit("animation", {
+        type: 'PLACE_CARD',
+        playerIndex: sub.playerIndex,
+        card: sub.card,
+        timestamp: Date.now()
+      });
       this.broadcastState();
-
-      setTimeout(() => {
-        if (this.status.state !== GameState.RESOLVING) return;
-        if (this.status.resolvingCardIndex !== currentIndex) return;
-
-        this.status.state = GameState.WAITING_ROW_CHOICE;
-        this.status.activePlayerIndex = sub.playerIndex;
-        this.broadcastState();
-
-        if (player?.isBot) {
-          const forcedRowIndex = this.findForcedRowIndex();
-          setTimeout(() => {
-            if (this.status.state !== GameState.WAITING_ROW_CHOICE) return;
-            if (this.status.activePlayerIndex !== sub.playerIndex) return;
-            this.handleRowChoice(player, forcedRowIndex);
-          }, 300);
-        }
-      }, 900);
+      this.startRowChoice(sub.playerIndex, currentIndex, player, forcedRowIndex);
     } else {
       const row = this.status.rows[targetRowIndex];
       if (row.cards.length >= 5) {
@@ -461,6 +453,12 @@ export class GameManager {
   }
 
   private resetToLobby() {
+      this.status.players = this.status.players.map((player) => {
+        if (!player) return null;
+        if (player.isBot) return null;
+        player.seatIndex = player.seatIndex !== null && player.seatIndex < this.status.maxPlayers ? player.seatIndex : null;
+        return player;
+      });
       this.status.state = GameState.LOBBY;
       this.status.round = 0;
       this.status.rows = [];
@@ -476,6 +474,26 @@ export class GameManager {
       this.scoreHistory = [];
       this.resetBotAgents();
       this.broadcastState();
+  }
+
+  private startRowChoice(playerIndex: number, resolvingIndex: number, player: Player | null, forcedRowIndex?: number) {
+    setTimeout(() => {
+      if (this.status.state !== GameState.RESOLVING) return;
+      if (this.status.resolvingCardIndex !== resolvingIndex) return;
+
+      this.status.state = GameState.WAITING_ROW_CHOICE;
+      this.status.activePlayerIndex = playerIndex;
+      this.broadcastState();
+
+      if (player?.isBot) {
+        const rowIndex = forcedRowIndex ?? this.findForcedRowIndex();
+        setTimeout(() => {
+          if (this.status.state !== GameState.WAITING_ROW_CHOICE) return;
+          if (this.status.activePlayerIndex !== playerIndex) return;
+          this.handleRowChoice(player, rowIndex);
+        }, 300);
+      }
+    }, 1000);
   }
 
   private resetBotAgents() {
