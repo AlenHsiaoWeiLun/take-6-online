@@ -58,7 +58,7 @@ Deploy flow:
 
 Because the frontend and backend are served by the same Render service, you do not need `VITE_SERVER_URL` for the Render deployment.
 
-The default Render configuration uses the lightweight `BestPlayer1` Monte Carlo search bot so Docker builds stay small and reliable on the free tier. The RL adapter remains available for local development or custom deployments with extra Python dependencies.
+The default Render configuration uses the lightweight `RandomPlayer` bot so Docker builds stay small and reliable on the free tier. The RL adapter remains available for local development or custom deployments with extra Python dependencies.
 
 ## Bot Backend
 Bots call a Python worker that loads a configurable agent class and passes it the current `hand/history`.
@@ -66,8 +66,8 @@ Bots call a Python worker that loads a configurable agent class and passes it th
 Default agent env:
 ```bash
 FAI_AGENT_ROOT=./2026-FAI-Final-Release-main
-FAI_AGENT_MODULE=src.players.TA.best_player1
-FAI_AGENT_CLASS=BestPlayer1
+FAI_AGENT_MODULE=src.players.TA.random_player
+FAI_AGENT_CLASS=RandomPlayer
 FAI_AGENT_ARGS={}
 ```
 
