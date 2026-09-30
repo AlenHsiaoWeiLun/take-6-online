@@ -20,7 +20,7 @@ class RL6NimmtAgentAdapter:
     def __init__(
         self,
         player_idx: int = 0,
-        repo_root: str = "./vendor/rl-6-nimmt",
+        repo_root: str = "./bots/rl-6-nimmt",
         agent_name: str = "mcts",
         agent_module: Optional[str] = None,
         agent_class: Optional[str] = None,
