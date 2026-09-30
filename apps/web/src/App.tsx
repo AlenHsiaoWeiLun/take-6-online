@@ -1,5 +1,5 @@
 import { Link, Outlet, Route, Routes, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
@@ -14,6 +14,9 @@ import { artUrl } from './art/Art';
 import { useT } from './i18n';
 import { LANDINGS, Landing } from './pages/Landing';
 import { FxLayer } from './fx/fx';
+
+// Trailer renderer for marketing clips; never shipped in production builds.
+const Promo = import.meta.env.DEV ? lazy(() => import('./promo/Promo')) : null;
 
 function SiteLayout() {
   const { pathname } = useLocation();
@@ -49,6 +52,7 @@ export default function App() {
       <div className="backdrop" data-art={bg ? '' : undefined} style={bg ? ({ '--bg-art': `url(${bg})` } as React.CSSProperties) : undefined} />
       <Routes>
         <Route path="/play/:code" element={<RoomPage />} />
+        {Promo && <Route path="/promo" element={<Suspense fallback={null}><Promo /></Suspense>} />}
         <Route element={<SiteLayout />}>
           <Route index element={<Home />} />
           <Route path="plus" element={<Plus />} />
