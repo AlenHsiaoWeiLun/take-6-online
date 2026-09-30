@@ -1,7 +1,7 @@
 /** Traditional Chinese (Taiwan). Keys are the English source strings. */
 export const zh: Record<string, string> = {
   // navigation & chrome
-  'How to play': '遊戲規則',
+  'How to play': '怎麼玩',
   Leaderboard: '排行榜',
   Rules: '規則',
   Privacy: '隱私權',
@@ -460,4 +460,8 @@ export const zh: Record<string, string> = {
   'Needs at least {n} players': '至少要 {n} 位玩家',
   'You’re in. Waiting for {name}.': '你已入座，等 {name} 開始。',
   Done: '完成',
+  // footer
+  'Game rules': '遊戲規則',
+  'Independent game. Not affiliated with or endorsed by AMIGO Spiele. 6 nimmt!® is a trademark of AMIGO Spiele.': '獨立製作，與 AMIGO Spiele 無關，亦未獲官方背書。6 nimmt!® 為 AMIGO Spiele 註冊商標。',
+  'Also known as': '也叫做',
 };
