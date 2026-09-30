@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import type { RoomSnapshot } from '@take6/shared';
+import type { Card, PlayedCard, RoomSnapshot } from '@take6/shared';
 import { useSession } from './session';
+
+/** One line of the round log, built from the server's event stream. */
+export type LogEntry =
+  | { id: number; hand: number; turn: number; kind: 'reveal'; played: PlayedCard[] }
+  | { id: number; hand: number; turn: number; kind: 'place'; playerId: string; card: Card; row: number }
+  | { id: number; hand: number; turn: number; kind: 'take'; playerId: string; card: Card; row: number; penalty: number; forced: boolean };
 
 export interface EmoteBubble {
   key: number;
@@ -16,6 +22,8 @@ export function useRoom(code: string) {
   const [closedReason, setClosedReason] = useState<string | null>(null);
   const [emotes, setEmotes] = useState<EmoteBubble[]>([]);
   const [ratings, setRatings] = useState<Record<string, { rating: number; delta: number }>>({});
+  const [log, setLog] = useState<LogEntry[]>([]);
+  const lastLogged = useRef<number | null>(null);
   const clockOffset = useRef(0);
 
   useEffect(() => {
@@ -25,6 +33,16 @@ export function useRoom(code: string) {
       clockOffset.current = snap.room.serverNow - Date.now();
       setSnapshot(snap);
       if (snap.room.phase !== 'gameEnd') setRatings((prev) => (Object.keys(prev).length ? {} : prev));
+      const e = snap.room.lastEvent;
+      if (e && e.id !== lastLogged.current) {
+        lastLogged.current = e.id;
+        const at = { id: e.id, hand: snap.room.handNumber, turn: snap.room.turn };
+        if (e.type === 'deal' && snap.room.handNumber === 1) setLog([]);
+        if (e.type === 'reveal') setLog((l) => [...l, { ...at, kind: 'reveal', played: snap.room.played }]);
+        if (e.type === 'place') setLog((l) => [...l, { ...at, kind: 'place', playerId: e.playerId, card: e.card, row: e.row }]);
+        if (e.type === 'take')
+          setLog((l) => [...l, { ...at, kind: 'take', playerId: e.playerId, card: e.card, row: e.row, penalty: e.penalty, forced: e.forced }]);
+      }
     };
     const onEmote = (e: { playerId: string; emote: string }) => {
       const key = Date.now() + Math.random();
@@ -49,5 +67,5 @@ export function useRoom(code: string) {
     socket.emit('room:join', { code }, (res) => setError(res.ok ? null : res.error));
   }, [socket, connected, code, closedReason]);
 
-  return { snapshot, error, closedReason, emotes, clockOffset, ratings };
+  return { snapshot, error, closedReason, emotes, clockOffset, ratings, log };
 }

@@ -9,6 +9,7 @@ import { Art } from '../art/Art';
 import { api } from '../lib/api';
 import { useSession } from '../state/session';
 import { useT } from '../i18n';
+import { RankBadge } from '../game/GameOver';
 
 interface Row {
   rank: number;
@@ -48,7 +49,6 @@ export function Leaderboard() {
     api<{ profile: Me | null }>('/api/me').then((r) => setMe(r.profile)).catch(() => setMe(null));
   }, [user]);
 
-  const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -116,7 +116,7 @@ export function Leaderboard() {
               r.rank <= 3 && 'bg-hay/[0.04]',
             )}
           >
-            <span className={clsx('font-display text-lg font-extrabold tabular', r.rank <= 3 ? 'text-hay' : 'text-fog')}>{medal(r.rank)}</span>
+            <RankBadge rank={r.rank} />
             <span className="flex min-w-0 items-center gap-2.5">
               <Avatar id={r.avatar} size={32} ring={r.isPlus ? '#f5b942' : undefined} />
               <span className="truncate font-semibold">{r.displayName}</span>

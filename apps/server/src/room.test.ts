@@ -89,6 +89,33 @@ describe('Room', () => {
     expect(end.handNumber).toBeGreaterThan(1);
   });
 
+  it('untimed practice tables wait for the human and keep a session tally', async () => {
+    const room = new Room(io, 'PRAC', { maxPlayers: 4, turnSeconds: 0 }, { onGameEnd: () => {}, onClose: () => {} });
+    room.join('me', guest(1));
+    room.fillWithBots(4);
+    room.startBy('me');
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+    let snap = room.snapshotFor('me');
+    expect(snap.room.phase).toBe('selecting');
+    expect(snap.room.deadline).toBeNull();
+    expect(snap.self.selected).toBeNull();
+    for (let i = 0; i < 4000 && room.snapshotFor('me').room.phase !== 'gameEnd'; i++) {
+      snap = room.snapshotFor('me');
+      if (snap.room.phase === 'selecting' && snap.self.selected === null && snap.self.hand.length) room.play('me', snap.self.hand[0].value);
+      if (snap.room.phase === 'choosingRow' && snap.room.choosingPlayerId === snap.self.playerId) room.chooseRow('me', 0);
+      await vi.advanceTimersByTimeAsync(250);
+    }
+    const end = room.snapshotFor('me').room;
+    expect(end.phase).toBe('gameEnd');
+    expect(end.players.every((p) => p.session.games === 1)).toBe(true);
+    expect(end.players.reduce((n, p) => n + p.session.wins, 0)).toBeGreaterThanOrEqual(1);
+  });
+
+  it('public tables can never be untimed', () => {
+    const room = new Room(io, 'PUBL', { isPublic: true, turnSeconds: 0 }, { onGameEnd: () => {}, onClose: () => {} });
+    expect(room.settings.turnSeconds).toBe(30);
+  });
+
   it('hands host to the next human and removes kicked players', () => {
     const room = new Room(io, 'HOST', {}, { onGameEnd: () => {}, onClose: () => {} });
     room.join('a', guest(1));

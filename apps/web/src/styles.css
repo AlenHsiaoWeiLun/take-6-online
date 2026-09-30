@@ -10,8 +10,8 @@
   --color-ink-800: #1b202b;
   --color-ink-700: #272d3a;
   --color-ink-600: #363d4d;
-  --color-fog: #9aa1b1;
-  --color-mist: #c9cdd6;
+  --color-fog: #aab1bf;
+  --color-mist: #d6d9e0;
   --color-paper: #fff7ea;
   --color-bone: #efe6d6;
   --color-bull: #e5484d;
@@ -126,8 +126,8 @@
   }
 
   .panel {
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.02));
-    border: 1px solid rgb(255 255 255 / 0.08);
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.065), rgb(255 255 255 / 0.035));
+    border: 1px solid rgb(255 255 255 / 0.11);
     border-radius: 1.25rem;
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 24px 60px -30px rgb(0 0 0 / 0.6);
   }
@@ -162,7 +162,7 @@
   .btn-primary {
     background: linear-gradient(180deg, #f2666b, var(--color-bull));
     color: white;
-    box-shadow: 0 1px 0 rgb(255 255 255 / 0.3) inset, 0 4px 0 var(--color-bull-deep), 0 12px 24px -10px rgb(229 72 77 / 0.8);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.3) inset, 0 4px 0 var(--color-bull-deep), 0 8px 16px -10px rgb(0 0 0 / 0.6);
   }
   .btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #f5777b, #ea5257); transform: translateY(-1px); }
   .btn-primary:active:not(:disabled), .btn-gold:active:not(:disabled), .btn-ghost:active:not(:disabled) {
@@ -173,7 +173,7 @@
   .btn-gold {
     background: linear-gradient(180deg, #ffd574, var(--color-hay));
     color: #2a1c00;
-    box-shadow: 0 1px 0 rgb(255 255 255 / 0.45) inset, 0 4px 0 var(--color-hay-deep), 0 12px 24px -10px rgb(245 185 66 / 0.8);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.45) inset, 0 4px 0 var(--color-hay-deep), 0 8px 16px -10px rgb(0 0 0 / 0.6);
   }
   .btn-gold:hover:not(:disabled) { transform: translateY(-1px); }
 
@@ -204,6 +204,7 @@
 
   .chip {
     display: inline-flex;
+    color: var(--color-mist);
     align-items: center;
     gap: 0.35rem;
     border-radius: 999px;
@@ -374,7 +375,7 @@
     width: var(--card-w);
     height: var(--card-h);
     border-radius: calc(var(--card-w) * 0.12);
-    border: 1.5px dashed rgb(255 255 255 / 0.12);
+    border: 1.5px dashed rgb(255 255 255 / 0.07);
   }
   .slot-danger {
     border-color: rgb(229 72 77 / 0.55);

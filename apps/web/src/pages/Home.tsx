@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { makeCard, type PublicRoomSummary } from '@take6/shared';
 import { HeroArt } from '../art/Illustrations';
-import { IconArrowRight, IconTakeRow } from '../art/icons';
+import { Bullhead, IconArrowRight, IconBot, IconClose, IconGlobe } from '../art/icons';
+import clsx from 'clsx';
 import { AdSlot } from '../components/AdSlot';
 import { GameCard } from '../components/GameCard';
 import { request, useSession } from '../state/session';
@@ -52,7 +53,7 @@ export function Home() {
 
   return (
     <div>
-      <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-10 pt-10 md:grid-cols-[1.05fr_1fr] md:pt-16">
+      <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-8 pt-6 md:grid-cols-[1fr_1.05fr] md:gap-10 md:pt-14">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-balance sm:text-6xl lg:text-7xl">
             {lang === 'zh' ? (
@@ -70,24 +71,32 @@ export function Home() {
             </button>
             {joining ? (
               <form
-                className="flex gap-2"
+                className="flex flex-col gap-1"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (code.trim().length === 4) join(code.trim().toUpperCase());
                 }}
               >
-                <input
-                  autoFocus
-                  className="input !px-2 text-center font-display text-xl font-bold uppercase tracking-[0.25em] placeholder:tracking-[0.12em]"
-                  placeholder={t('CODE')}
-                  value={code}
-                  maxLength={4}
-                  onChange={(e) => setCode(e.target.value.replace(/[^a-z]/gi, '').toUpperCase())}
-                  aria-label={t('Room code')}
-                />
-                <button className="btn btn-ghost !px-3" disabled={code.length !== 4 || !connected || !!busy} aria-label={t('Join room')}>
-                  <IconArrowRight size={18} />
-                </button>
+                <label className="sr-only" htmlFor="room-code">{t('Room code')}</label>
+                <div className="flex gap-1.5">
+                  <input
+                    id="room-code"
+                    autoFocus
+                    className={clsx('input !px-2 text-center font-display text-xl font-bold uppercase tracking-[0.25em] placeholder:tracking-[0.1em]', error && '!border-bull')}
+                    placeholder={t('CODE')}
+                    value={code}
+                    maxLength={4}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? 'join-error' : undefined}
+                    onChange={(e) => {
+                      setError(null);
+                      setCode(e.target.value.replace(/[^a-z]/gi, '').toUpperCase());
+                    }}
+                  />
+                  <button className="btn btn-ghost shrink-0 !px-3" disabled={code.length !== 4 || !connected || !!busy}>
+                    {busy === 'join' ? '…' : t('Join')}
+                  </button>
+                </div>
               </form>
             ) : (
               <button className="btn btn-ghost btn-lg !py-4 !text-lg" disabled={!connected} onClick={() => setJoining(true)}>
@@ -95,18 +104,21 @@ export function Home() {
               </button>
             )}
           </div>
-          <p className="mt-4 text-sm text-fog">
-            {t('Alone?')}{' '}
-            <button className="font-semibold text-mist underline decoration-white/20 underline-offset-4 hover:text-white" disabled={!connected || !!busy} onClick={() => quick(true)}>
-              {busy === 'bots' ? t('Dealing…') : t('Practise vs bots')}
-            </button>{' '}
-            ·{' '}
-            <button className="font-semibold text-mist underline decoration-white/20 underline-offset-4 hover:text-white" disabled={!connected || !!busy} onClick={() => quick(false)}>
-              {busy === 'online' ? t('Finding…') : t('Match with strangers')}
+          {error && (
+            <p id="join-error" role="alert" className="mt-2 flex max-w-md items-center gap-1.5 rounded-lg bg-bull/12 px-3 py-2 text-sm font-semibold text-[#ff9ea1]">
+              <IconClose size={14} /> {error}
+            </p>
+          )}
+          <div className="mt-4 flex max-w-md flex-wrap items-center gap-2 text-sm text-fog">
+            <span>{t('Alone?')}</span>
+            <button className="btn btn-ghost btn-sm" disabled={!connected || !!busy} onClick={() => quick(true)}>
+              <IconBot size={15} /> {busy === 'bots' ? t('Dealing…') : t('Practise vs bots')}
             </button>
-          </p>
+            <button className="btn btn-ghost btn-sm" disabled={!connected || !!busy} onClick={() => quick(false)}>
+              <IconGlobe size={15} /> {busy === 'online' ? t('Finding…') : t('Match with strangers')}
+            </button>
+          </div>
           {!connected && <p className="mt-3 text-sm text-fog">{t('Connecting to the game server…')}</p>}
-          {error && <p className="mt-3 text-sm text-bull">{error}</p>}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
@@ -160,14 +172,24 @@ export function Home() {
             </div>
           </Step>
           <Step n={3} title={t('Sixth card takes the row')} body={t('Play the sixth card on a row and you swallow all five cards — and their bullheads. Fewest bullheads wins.')}>
-            <div className="flex items-center gap-2 text-bull">
-              <IconTakeRow size={40} />
-              <span className="font-display text-3xl font-extrabold">+11</span>
+            <div className="flex items-center gap-1">
+              {[14, 17, 22, 26, 29].map((v, i) => (
+                <div key={v} style={{ transform: `rotate(${i * 4 - 8}deg) translateY(${Math.abs(i - 2) * 2}px)` }}>
+                  <GameCard card={makeCard(v)} width={30} />
+                </div>
+              ))}
+              <div className="ml-1 rounded-[6px] ring-2 ring-bull">
+                <GameCard card={makeCard(31)} width={34} />
+              </div>
+              <span className="ml-1 flex items-center gap-0.5 font-display text-xl font-extrabold text-bull">
+                +9 <Bullhead size={14} />
+              </span>
             </div>
           </Step>
         </div>
         <div className="mt-6 text-center">
-          <Link to="/rules" className="text-sm font-semibold text-hay hover:underline">{t('Read the full rules →')}</Link>
+          <Link to="/learn" className="btn btn-ghost">{t('Try the 2-minute tutorial')} <IconArrowRight size={16} /></Link>
+          <Link to="/rules" className="ml-4 text-sm font-semibold text-mist hover:text-white">{t('Read the full rules →')}</Link>
         </div>
       </section>
 

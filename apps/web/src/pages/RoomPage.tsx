@@ -11,7 +11,7 @@ import { CardLoader } from '../components/CardLoader';
 export function RoomPage() {
   const code = (useParams().code ?? '').toUpperCase();
   const { socket, connected } = useSession();
-  const { snapshot, error, closedReason, emotes, clockOffset, ratings } = useRoom(code);
+  const { snapshot, error, closedReason, emotes, clockOffset, ratings, log } = useRoom(code);
   const t = useT();
 
   useEffect(() => () => void socket?.emit('room:leave'), [socket]);
@@ -47,7 +47,7 @@ export function RoomPage() {
   return (
     <>
       {banner}
-      <Table snapshot={snapshot} emotes={emotes} clockOffset={clockOffset} ratings={ratings} />
+      <Table snapshot={snapshot} emotes={emotes} clockOffset={clockOffset} ratings={ratings} log={log} />
     </>
   );
 }

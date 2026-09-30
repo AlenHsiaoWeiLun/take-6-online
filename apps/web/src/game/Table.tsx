@@ -15,10 +15,14 @@ import {
 import { Avatar } from '../components/Avatar';
 import { AnimatedNumber } from '../components/AnimatedNumber';
 import { CardBack, GameCard } from '../components/GameCard';
-import { Bullhead, IconCheck, IconLogOut, IconLowCard, IconMusic, IconMusicOff, IconMute, IconSmile, IconVolume } from '../art/icons';
+import { Bullhead, IconBook, IconCheck, IconCrown, IconLogOut, IconLowCard, IconMusic, IconMusicOff, IconMute, IconSettings, IconSmile, IconVolume } from '../art/icons';
 import { useMusic, useMuted } from '../components/Header';
 import { useSession } from '../state/session';
-import type { EmoteBubble } from '../state/room';
+import type { EmoteBubble, LogEntry } from '../state/room';
+import { RoundLog } from './RoundLog';
+import { Modal } from '../components/Modal';
+import { makeCard } from '@take6/shared';
+import { useLang } from '../i18n';
 import { haptic, sound } from '../lib/sound';
 import { useCountdown } from './useCountdown';
 import { GameOver, HandSummary } from './GameOver';
@@ -40,9 +44,10 @@ interface Props {
   emotes: EmoteBubble[];
   clockOffset: MutableRefObject<number>;
   ratings: Record<string, { rating: number; delta: number }>;
+  log: LogEntry[];
 }
 
-export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
+export function Table({ snapshot, emotes, clockOffset, ratings, log }: Props) {
   const { socket, session } = useSession();
   const navigate = useNavigate();
   const t = useT();
@@ -70,10 +75,10 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
 
   useTableFeedback(snapshot, secondsLeft, emotes);
 
+  const [panel, setPanel] = useState<'leave' | 'rules' | 'log' | null>(null);
   const leave = () => {
-    const live = room.phase !== 'gameEnd';
-    if (live && me && !window.confirm(t('Leave this game? Bots will play your cards until you come back.'))) return;
-    navigate('/');
+    if (room.phase !== 'gameEnd' && me) setPanel('leave');
+    else navigate('/');
   };
 
   return (
@@ -104,11 +109,13 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
           <button className="btn btn-ghost btn-sm !px-2.5" onClick={leave} aria-label={t('Leave table')}>
             <IconLogOut size={17} className="rotate-180" />
           </button>
-          <div className="leading-tight">
-            <div className="font-display text-sm font-bold tracking-[0.18em]">{room.code}</div>
-            <div className="text-[11px] text-fog tabular">
+          <div className="shrink-0 leading-tight">
+            <div className="font-display text-base font-extrabold tabular sm:text-lg">
               {t('Turn {n}/{total}', { n: Math.min(room.turn, HAND_SIZE), total: HAND_SIZE })}
-              {room.settings.mode === 'classic' && ` · ${t('Hand {n}', { n: room.handNumber })}`}
+            </div>
+            <div className="text-[11px] font-semibold text-fog">
+              {room.settings.mode === 'classic' && `${t('Hand {n}', { n: room.handNumber })} · `}
+              {t('Room {code}', { code: room.code })}
             </div>
           </div>
           {wide ? (
@@ -127,8 +134,13 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
               />
             )}
             {me && <ReactionButton onReact={(e) => socket?.emit('game:emote', e)} />}
-            <MusicButton />
-            <MuteButton />
+            <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setPanel('log')} aria-label={t('Round log')} title={t('Round log')}>
+              <IconBook size={17} />
+            </button>
+            <button className="btn btn-ghost btn-sm !px-2.5 font-display font-extrabold" onClick={() => setPanel('rules')} aria-label={t('Rules')} title={t('Rules')}>
+              ?
+            </button>
+            <GameSettings />
           </div>
         </div>
 
@@ -193,6 +205,20 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
         </LayoutGroup>
       </div>
 
+      <RoundLog open={panel === 'log'} onClose={() => setPanel(null)} log={log} players={room.players} selfId={self.playerId} />
+      <Modal open={panel === 'rules'} onClose={() => setPanel(null)} label={t('Rules')}>
+        <QuickRules />
+      </Modal>
+      <Modal open={panel === 'leave'} onClose={() => setPanel(null)} label={t('Leave table')}>
+        <h2 className="font-display text-2xl font-bold">{t('Leave this game?')}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-mist">
+          {t('A bot plays your cards while you’re gone. Open this room again in the same browser to take your seat back.')}
+        </p>
+        <div className="mt-5 grid grid-cols-2 gap-2.5">
+          <button className="btn btn-ghost" onClick={() => setPanel(null)}>{t('Keep playing')}</button>
+          <button className="btn btn-primary" onClick={() => navigate('/')}>{t('Leave')}</button>
+        </div>
+      </Modal>
       <HandSummary snapshot={snapshot} clockOffset={clockOffset} />
       <GameOver snapshot={snapshot} ratings={ratings} onLeave={() => navigate('/')} />
     </div>
@@ -349,8 +375,8 @@ function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emo
             }}
           >
             <span className="relative">
-              <span className="block rounded-full p-[2px]" style={{ background: color }}>
-                <Avatar id={p.avatar} size={32} className={clsx(!p.connected && 'opacity-40 grayscale')} />
+              <span className="block rounded-full p-[1.5px]" style={{ background: color }}>
+                <Avatar id={p.avatar} size={28} className={clsx(!p.connected && 'opacity-40 grayscale')} />
               </span>
               {room.phase === 'selecting' && (
                 <AnimatePresence initial={false} mode="popLayout">
@@ -365,18 +391,22 @@ function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emo
                       p.hasPlayed ? 'bg-mint text-ink-950' : 'bg-ink-700',
                     )}
                   >
-                    {p.hasPlayed ? <IconCheck size={9} strokeWidth={3.5} /> : <span className="size-1 animate-pulse rounded-full bg-fog" />}
+                    {p.hasPlayed ? <IconCheck size={9} strokeWidth={3.5} aria-label={t('Played')} /> : <span className="size-1 animate-pulse rounded-full bg-fog" aria-label={t('Thinking')} />}
                   </motion.span>
                 </AnimatePresence>
               )}
-              {leading && <span className="absolute -left-1.5 -top-2 text-sm" title={t('Leader')}>👑</span>}
+              {leading && (
+                <span className="absolute -left-1.5 -top-2 grid size-4 place-items-center rounded-full bg-hay text-ink-950" title={t('Leader')}>
+                  <IconCrown size={10} strokeWidth={2.4} />
+                </span>
+              )}
             </span>
             <span className="leading-tight">
-              <span className={clsx('block max-w-[6.5rem] truncate text-[13px] font-semibold', thinking && 'text-mist')}>
+              <span className={clsx('block max-w-[5.5rem] truncate text-[13px] font-bold sm:max-w-[7rem]', thinking ? 'text-mist' : 'text-white')}>
                 {p.id === self.playerId ? t('You') : p.name}
               </span>
-              <span className={clsx('flex items-center gap-1 text-xs font-bold tabular', leading ? 'text-mint' : 'text-fog')}>
-                <Bullhead size={11} className="text-bull" /> <AnimatedNumber value={p.score} delay={p.id === takerId ? SCORE_LANDS_S : 0} />
+              <span className={clsx('flex min-w-[3.2rem] items-center gap-1 text-sm font-extrabold tabular', leading ? 'text-mint' : 'text-white')}>
+                <Bullhead size={12} className="text-bull" /> <AnimatedNumber value={p.score} delay={p.id === takerId ? SCORE_LANDS_S : 0} />
                 {room.settings.mode === 'classic' && p.handScore > 0 && <span className="font-medium text-fog/70">(+{p.handScore})</span>}
               </span>
             </span>
@@ -595,7 +625,7 @@ function BoardRow({
 
   return (
     <motion.div
-      className="relative flex items-center gap-[calc(var(--card-w)*0.09)]"
+      className={clsx('relative flex items-center gap-[calc(var(--card-w)*0.09)] rounded-xl', full && !hot && 'outline outline-1 outline-offset-2 outline-bull/35')}
       animate={{
         opacity: dim ? 0.38 : 1,
         filter: dim ? 'saturate(.4)' : 'saturate(1)',
@@ -615,8 +645,9 @@ function BoardRow({
         )}
         title={t('Row {n}: {p} bullheads', { n: index + 1, p: penalty })}
       >
-        <Bullhead size={14} className={hot ? 'text-white' : penalty >= 10 ? 'text-bull' : 'text-fog'} />
-        <span className="font-display text-sm font-bold tabular sm:text-base">{penalty}</span>
+        <span className="text-[9px] font-bold uppercase leading-none tracking-wide opacity-70">{t('row')}</span>
+        <span className="font-display text-base font-extrabold leading-tight tabular sm:text-lg">{penalty}</span>
+        <Bullhead size={12} className={hot ? 'text-white' : penalty >= 10 ? 'text-bull' : 'text-fog'} />
       </motion.div>
 
       <div ref={ref} className="flex gap-[calc(var(--card-w)*0.07)]">
@@ -659,12 +690,18 @@ function BoardRow({
             <div
               key={`slot-${i}`}
               className={clsx(
-                'slot transition-colors',
+                'slot relative grid place-items-center transition-colors',
                 isSixth && 'slot-danger',
-                isSixth && full && !danger && 'animate-pulse',
                 target && i === cards.length && '!border-hay !border-solid bg-hay/10',
               )}
-            />
+            >
+              {isSixth && (
+                <span className={clsx('flex flex-col items-center font-display font-extrabold leading-none', full ? 'text-bull' : 'text-bull/45')}>
+                  <span className="text-[calc(var(--card-w)*0.34)]">6</span>
+                  {full && <span className="mt-0.5 text-[calc(var(--card-w)*0.13)] uppercase">{t('Full')}</span>}
+                </span>
+              )}
+            </div>
           );
         })}
       </div>
@@ -718,13 +755,12 @@ function StatusLine({
   const mine = (id: string) => id === self.playerId;
   const nameOf = (id: string) => byId.get(id)?.name ?? t('Someone');
   let text: React.ReactNode = '';
-  let tone: 'normal' | 'alert' | 'good' = 'normal';
+  let tone = 'normal' as 'normal' | 'alert' | 'good';
 
   if (room.phase === 'selecting') {
     const waiting = room.players.filter((p) => !p.hasPlayed);
     if (self.playerId && self.selected === null) {
-      text = t('Choose a card to play');
-      tone = 'good';
+      text = '';
     } else if (waiting.length) {
       text = waiting.length === 1 ? t('Waiting for {name}…', { name: nameOf(waiting[0].id) }) : t('Waiting for {n} players…', { n: waiting.length });
     }
@@ -879,7 +915,7 @@ function Hand({
   return (
     <div className="mx-auto max-w-4xl">
       {/* Fixed action bar: always the same place, always says what happens next. */}
-      <div className="flex min-h-11 items-center justify-center gap-3 px-1">
+      <div className="flex min-h-[52px] items-center justify-center gap-3 px-1 py-1">
         {canPlay && picked ? (
           <>
             {hint && (
@@ -911,12 +947,12 @@ function Hand({
         ) : null}
       </div>
       {hint && (
-        <p className={clsx('-mt-1 mb-1 text-center text-xs font-semibold sm:hidden', hint.danger ? 'text-[#ff9ea1]' : 'text-mist')}>{hint.text}</p>
+        <p className={clsx('mb-2 text-center text-xs font-semibold sm:hidden', hint.danger ? 'text-[#ff9ea1]' : 'text-mist')}>{hint.text}</p>
       )}
 
       <div
         ref={box}
-        className={clsx(grid ? 'grid grid-cols-5 justify-items-center gap-x-1.5 gap-y-2 px-1 pb-3 pt-1' : 'flex justify-center pb-4 pt-2')}
+        className={clsx(grid ? 'grid grid-cols-5 justify-items-center gap-x-1.5 gap-y-2.5 px-1 pb-3 pt-3' : 'flex justify-center pb-4 pt-2')}
         style={{ '--overlap': `${overlap}px` } as CSSProperties}
       >
         <AnimatePresence initial={false}>
@@ -1028,23 +1064,77 @@ function TimerPill({ seconds, total, urgent }: { seconds: number; total: number;
   );
 }
 
-function MuteButton() {
+/** In-game tools live in one popover so the bar keeps its space for game information. */
+function GameSettings() {
+  const [open, setOpen] = useState(false);
   const [muted, setMuted] = useMuted();
-  const t = useT();
+  const [music, setMusic] = useMusic();
+  const [hints, setHints] = useHintPref();
+  const { t, lang, setLang } = useLang();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    window.addEventListener('pointerdown', close);
+    return () => window.removeEventListener('pointerdown', close);
+  }, [open]);
+  const row = 'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-white/6';
+  const onOff = (v: boolean) => <span className={v ? 'text-mint' : 'text-fog'}>{v ? t('On') : t('Off')}</span>;
   return (
-    <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setMuted(!muted)} aria-label={muted ? t('Unmute') : t('Mute')}>
-      {muted ? <IconMute size={17} /> : <IconVolume size={17} />}
-    </button>
+    <div ref={ref} className="relative">
+      <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setOpen((o) => !o)} aria-label={t('Settings')} aria-expanded={open}>
+        <IconSettings size={17} />
+      </button>
+      {open && (
+        <div className="panel absolute right-0 top-11 z-40 w-60 bg-ink-850 p-1.5">
+          <button className={row} onClick={() => setMuted(!muted)}>
+            <span className="flex items-center gap-2">{muted ? <IconMute size={16} /> : <IconVolume size={16} />} {t('Sound effects')}</span>
+            {onOff(!muted)}
+          </button>
+          <button className={row} onClick={() => setMusic(!music)}>
+            <span className="flex items-center gap-2">{music ? <IconMusic size={16} /> : <IconMusicOff size={16} />} {t('Music')}</span>
+            {onOff(music)}
+          </button>
+          <button className={row} onClick={() => setHints(!(hints ?? false))}>
+            <span className="text-left">
+              {t('Landing hints')}
+              <span className="block text-[11px] font-medium text-fog">{t('Show where the picked card will go')}</span>
+            </span>
+            {onOff(!!hints)}
+          </button>
+          <button className={row} onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}>
+            <span>{t('Language')}</span>
+            <span className="text-fog">{lang === 'zh' ? '中文 → EN' : 'EN → 中文'}</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
-function MusicButton() {
-  const [music, setMusic] = useMusic();
+function QuickRules() {
   const t = useT();
   return (
-    <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setMusic(!music)} aria-label={music ? t('Music off') : t('Music on')}>
-      {music ? <IconMusic size={17} /> : <IconMusicOff size={17} />}
-    </button>
+    <div>
+      <h2 className="font-display text-2xl font-bold">{t('Rules in 30 seconds')}</h2>
+      <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-mist">
+        <li>{t('Everyone picks a card at the same time.')}</li>
+        <li>{t('From lowest to highest, each card goes after the row end that is lower and closest.')}</li>
+        <li>{t('Whoever places the sixth card in a row takes the five cards before it.')}</li>
+        <li>{t('A card lower than every row takes a row of your choice.')}</li>
+        <li>{t('Fewest bullheads wins.')}</li>
+      </ol>
+      <div className="mt-4 eyebrow">{t('Bullheads per card')}</div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {[8, 15, 30, 44, 55].map((v) => (
+          <div key={v} className="flex flex-col items-center gap-1 text-[11px] text-fog">
+            <GameCard card={makeCard(v)} width={44} />
+            {makeCard(v).bullheads} <Bullhead size={10} />
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-xs text-fog">{t('Band colour = bullheads: lilac 1 · blue 2 · amber 3 · red 5 · purple 7.')}</p>
+    </div>
   );
 }
 

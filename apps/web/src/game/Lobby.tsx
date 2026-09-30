@@ -1,34 +1,48 @@
 import { useEffect, useState, type MutableRefObject } from 'react';
+import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
-import { MAX_PLAYERS, MIN_PLAYERS, type RoomSettings, type RoomSnapshot } from '@take6/shared';
+import { MAX_PLAYERS, MIN_PLAYERS, type BotLevel, type RoomSettings, type RoomSnapshot } from '@take6/shared';
 import { Avatar } from '../components/Avatar';
 import { AdSlot } from '../components/AdSlot';
-import { IconBot, IconCheck, IconClose, IconCopy, IconCrown, IconGlobe, IconLock, IconPlay, IconPlus, IconShare, IconSparkle } from '../art/icons';
+import { Bullhead, IconBot, IconCheck, IconClose, IconCopy, IconCrown, IconGlobe, IconLock, IconPlay, IconPlus, IconShare, IconSparkle, IconTimer } from '../art/icons';
 import { useSession } from '../state/session';
 import { useCountdown } from './useCountdown';
 import { config } from '../lib/config';
 import { ProfileDialog } from '../components/ProfileDialog';
 import { useT } from '../i18n';
 
+const BOT_HINT: Record<BotLevel, string> = {
+  easy: 'Plays loose, often at random',
+  normal: 'Counts cards, but still slips up',
+  hard: 'Simulates hundreds of outcomes every turn',
+};
+
 export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clockOffset: MutableRefObject<number> }) {
   const { socket, session, updateProfile } = useSession();
+  const navigate = useNavigate();
+  const t = useT();
   const { room, self } = snapshot;
   const [name, setName] = useState(session.name);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
+  const autoStart = useCountdown(room.deadline, clockOffset);
+
   useEffect(() => {
     setName(session.name);
   }, [session.name]);
+
+  const me = room.players.find((p) => p.id === self.playerId);
+  const isHost = !!me?.isHost;
+  const defaultName = /^Guest [0-9A-F]{4}$/i.test(session.name);
+  const missing = Math.max(0, MIN_PLAYERS - room.players.length);
+  const full = room.players.length >= room.settings.maxPlayers;
+  const s = room.settings;
+
   const commitName = () => {
     const clean = name.trim().slice(0, 16);
     if (clean && clean !== session.name) updateProfile({ name: clean });
   };
-  const me = room.players.find((p) => p.id === self.playerId);
-  const isHost = !!me?.isHost;
-  const [copied, setCopied] = useState(false);
-  const [startError, setStartError] = useState<string | null>(null);
-  const autoStart = useCountdown(room.deadline, clockOffset);
-  const t = useT();
-
   const link = `${config.siteUrl}/play/${room.code}`;
   const copy = async () => {
     try {
@@ -41,159 +55,230 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
   };
   const share = () => navigator.share?.({ title: t('Join my Bullheads table'), text: t('Room code {code}', { code: room.code }), url: link }).catch(() => {});
   const set = (patch: Partial<RoomSettings>) => socket?.emit('room:settings', patch);
-  const start = () =>
-    socket?.emit('game:start', (res) => setStartError(res.ok ? null : t(res.error)));
+  const start = () => socket?.emit('game:start', (res) => setStartError(res.ok ? null : t(res.error)));
+  const addBot = () => socket?.emit('room:addBot');
 
-  const seats = Array.from({ length: room.settings.maxPlayers }, (_, i) => room.players[i] ?? null);
+  const summary = [
+    t('{n} seats', { n: s.maxPlayers }),
+    s.mode === 'classic' ? t('Race to 66') : t('Quick game'),
+    s.turnSeconds ? `${s.turnSeconds}s` : t('Untimed'),
+    t('{level} bots', { level: t(s.botLevel) }),
+    s.isPublic ? t('Listed') : t('Private'),
+  ].join(' · ');
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+      {/* ------------------------------------------------ invite + your seat */}
+      <section className="panel grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
         <div>
           <div className="eyebrow flex items-center gap-2">
-            {room.settings.isPublic ? <IconGlobe size={13} /> : <IconLock size={13} />}
-            {room.settings.isPublic ? t('Public table') : t('Private table')}
+            {s.isPublic ? <IconGlobe size={13} /> : <IconLock size={13} />}
+            {s.isPublic ? t('Public table') : t('Invite friends')}
           </div>
-          <div className="mt-1 flex items-center gap-3">
-            <h1 className="font-display text-5xl font-extrabold tracking-[0.12em]">{room.code}</h1>
-            <button className="btn btn-ghost btn-sm" onClick={copy}>
-              {copied ? <IconCheck size={16} /> : <IconCopy size={16} />} {copied ? t('Copied') : t('Copy link')}
+          <div className="mt-1 flex flex-wrap items-center gap-2.5">
+            <span className="font-display text-5xl font-extrabold tracking-[0.12em]" aria-label={t('Room code {code}', { code: room.code })}>
+              {room.code}
+            </span>
+            <button className="btn btn-primary btn-sm" onClick={copy}>
+              {copied ? <IconCheck size={16} /> : <IconCopy size={16} />} {copied ? t('Copied') : t('Copy invite link')}
             </button>
             {'share' in navigator && (
-              <button className="btn btn-ghost btn-sm !px-2.5" onClick={share} aria-label={t('Share')}>
-                <IconShare size={16} />
+              <button className="btn btn-ghost btn-sm" onClick={share}>
+                <IconShare size={16} /> {t('Share')}
               </button>
             )}
           </div>
-          <p className="mt-1 text-sm text-fog">{t('Share the code or link — friends can join from any device.')}</p>
-          {self.playerId && (
-            <div className="mt-4 flex max-w-sm items-center gap-2.5">
+          <p className="mt-2 text-sm text-mist">{t('Friends open the link, type a name, and they’re in.')}</p>
+        </div>
+        {self.playerId && (
+          <div className="sm:w-64">
+            <label className={clsx('eyebrow', defaultName && '!text-hay')} htmlFor="my-name">
+              {defaultName ? t('Pick a name so friends know it’s you') : t('Your name')}
+            </label>
+            <div className="mt-2 flex items-center gap-2.5">
               <button onClick={() => setProfileOpen(true)} className="shrink-0 rounded-full transition hover:scale-105" aria-label={t('Choose character')}>
                 <Avatar id={session.avatar} size={42} ring="rgba(255,255,255,.18)" />
               </button>
               <input
-                className="input !py-2"
+                id="my-name"
+                className={clsx('input !py-2', defaultName && '!border-hay/60')}
                 value={name}
                 maxLength={16}
+                autoFocus={defaultName}
                 placeholder={t('Your name')}
-                aria-label={t('Your name')}
                 onChange={(e) => setName(e.target.value)}
                 onBlur={commitName}
                 onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget.blur(), commitName())}
               />
             </div>
-          )}
-        </div>
-        {autoStart !== null && (
-          <div className="panel flex items-center gap-3 px-4 py-3">
-            <span className="font-display text-2xl font-bold tabular text-hay">{Math.ceil(autoStart)}s</span>
-            <span className="text-sm text-fog">{t('until the deal — empty seats fill with bots')}</span>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_360px]">
-        <section>
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-xl font-bold">{t('Players')}</h2>
-            <span className="text-sm text-fog tabular">
-              {room.players.length}/{room.settings.maxPlayers}
-              {room.spectatorCount > 0 && ` · ${t('{n} watching', { n: room.spectatorCount })}`}
-            </span>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-            {seats.map((p, i) =>
-              p ? (
-                <div key={p.id} className={clsx('panel relative flex flex-col items-center p-4 text-center', p.id === self.playerId && 'ring-1 ring-hay/50')}>
-                  {isHost && !p.isHost && (
-                    <button
-                      onClick={() => socket?.emit('room:remove', p.id)}
-                      className="absolute right-2 top-2 rounded-md p-1 text-fog/70 hover:bg-white/8 hover:text-white"
-                      aria-label={t('Remove {name}', { name: p.name })}
-                    >
-                      <IconClose size={14} />
-                    </button>
-                  )}
-                  <Avatar id={p.avatar} size={64} ring={p.isPlus ? '#f5b942' : undefined} className={clsx(!p.connected && 'opacity-40')} />
-                  <div className="mt-2 w-full truncate font-semibold">{p.name}</div>
-                  <div className="mt-1 flex flex-wrap justify-center gap-1">
-                    {p.isHost && <span className="chip !text-hay"><IconCrown size={11} /> {t('Host')}</span>}
-                    {p.isBot && <span className="chip"><IconBot size={11} /> {t('Bot')}</span>}
-                    {p.isPlus && <span className="chip !text-hay"><IconSparkle size={11} /> Plus</span>}
-                    {p.id === self.playerId && <span className="chip">{t('You')}</span>}
-                    {!p.connected && !p.isBot && <span className="chip">{t('Away')}</span>}
-                  </div>
-                </div>
-              ) : (
-                <div key={`empty-${i}`} className="grid min-h-[152px] place-items-center rounded-[1.25rem] border border-dashed border-white/10 p-4">
-                  {isHost ? (
-                    <button className="btn btn-ghost btn-sm" onClick={() => socket?.emit('room:addBot')}>
-                      <IconPlus size={15} /> {t('Add bot')}
-                    </button>
-                  ) : (
-                    <span className="text-sm text-fog/70">{t('Open seat')}</span>
-                  )}
-                </div>
-              ),
-            )}
-          </div>
-          {!self.playerId && <p className="mt-4 text-sm text-fog">{t('This table is full — you’re watching as a spectator.')}</p>}
+      {/* ------------------------------------------------ matchmaking status */}
+      {autoStart !== null && (
+        <section className="panel mt-4 flex flex-wrap items-center gap-3 border-hay/30 p-4" role="status">
+          <span className="font-display text-3xl font-extrabold tabular text-hay">{Math.ceil(autoStart)}s</span>
+          <span className="min-w-0 flex-1 text-sm text-mist">
+            {t('{n} of {max} seats taken. When the timer ends, empty seats fill with bots and the deal starts.', { n: room.players.length, max: s.maxPlayers })}
+          </span>
+          {isHost && (
+            <button className="btn btn-ghost btn-sm" onClick={start} disabled={room.players.length < MIN_PLAYERS}>
+              {t('Start now')}
+            </button>
+          )}
+          <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>
+            {t('Leave queue')}
+          </button>
         </section>
+      )}
 
-        <aside className="panel h-fit p-5">
-          <h2 className="font-display text-xl font-bold">{t('Table rules')}</h2>
-          {!isHost && <p className="mt-1 text-sm text-fog">{t('Only the host can change these.')}</p>}
-          <div className="mt-5 space-y-5">
-            <Setting label={t('Seats')}>
-              <div className="seg flex-wrap">
-                {Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => i + MIN_PLAYERS).map((n) => (
-                  <button key={n} aria-pressed={room.settings.maxPlayers === n} disabled={!isHost || n < room.players.length} onClick={() => set({ maxPlayers: n })}>
-                    {n}
+      {/* ------------------------------------------------ players */}
+      <section className="mt-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-xl font-bold">
+            {t('Players')} <span className="text-base font-semibold text-fog tabular">{room.players.length}/{s.maxPlayers}</span>
+            {room.spectatorCount > 0 && <span className="ml-2 text-sm font-medium text-fog">{t('{n} watching', { n: room.spectatorCount })}</span>}
+          </h2>
+          {isHost && !full && (
+            <button className="btn btn-ghost btn-sm" onClick={addBot}>
+              <IconPlus size={15} /> {t('Add bot')}
+            </button>
+          )}
+        </div>
+        <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
+          {room.players.map((p) => (
+            <li key={p.id} className={clsx('panel relative flex items-center gap-2.5 p-2.5 sm:p-3', p.id === self.playerId && 'ring-1 ring-hay/50')}>
+              <Avatar id={p.avatar} size={36} ring={p.isPlus ? '#f5b942' : undefined} className={clsx('shrink-0', !p.connected && !p.isBot && 'opacity-40')} />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold sm:text-base">{p.id === self.playerId ? `${p.name} (${t('You')})` : p.name}</div>
+                <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[11px] font-semibold text-mist">
+                  {p.isHost && (
+                    <span className="inline-flex items-center gap-0.5 text-hay">
+                      <IconCrown size={11} /> {t('Host')}
+                    </span>
+                  )}
+                  {p.isBot && (
+                    <span className="inline-flex items-center gap-0.5">
+                      <IconBot size={11} /> {t('Bot')}
+                    </span>
+                  )}
+                  {!p.isBot && (p.connected ? <span className="text-mint">● {t('Here')}</span> : <span className="text-fog">○ {t('Away')}</span>)}
+                  {p.isPlus && <IconSparkle size={11} className="text-hay" />}
+                </div>
+                {p.session.games > 0 && (
+                  <div className="mt-0.5 flex items-center gap-1 text-[11px] text-fog tabular">
+                    {t('Tonight: {w} wins', { w: p.session.wins })} · {p.session.bullheads} <Bullhead size={10} />
+                  </div>
+                )}
+              </div>
+              {isHost && !p.isHost && (
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={() => socket?.emit('room:remove', p.id)}
+                    className="rounded-md p-1 text-fog/70 hover:bg-white/8 hover:text-white"
+                    aria-label={t('Remove {name}', { name: p.name })}
+                  >
+                    <IconClose size={14} />
                   </button>
-                ))}
-              </div>
-            </Setting>
-            <Setting label={t('Game length')}>
-              <div className="seg">
-                <button aria-pressed={room.settings.mode === 'quick'} disabled={!isHost} onClick={() => set({ mode: 'quick' })}>{t('Quick · 10 turns')}</button>
-                <button aria-pressed={room.settings.mode === 'classic'} disabled={!isHost} onClick={() => set({ mode: 'classic' })}>{t('Race to 66')}</button>
-              </div>
-            </Setting>
-            <Setting label={t('Turn timer')}>
-              <div className="seg">
-                {[15, 30, 45, 60].map((s) => (
-                  <button key={s} aria-pressed={room.settings.turnSeconds === s} disabled={!isHost} onClick={() => set({ turnSeconds: s })}>{s}s</button>
-                ))}
-              </div>
-            </Setting>
-            <Setting label={t('Bot skill')}>
-              <div className="seg">
-                {(['easy', 'normal', 'hard'] as const).map((l) => (
-                  <button key={l} aria-pressed={room.settings.botLevel === l} disabled={!isHost} onClick={() => set({ botLevel: l })} className="capitalize">{t(l)}</button>
-                ))}
-              </div>
-            </Setting>
-            <Setting label={t('Visibility')}>
-              <div className="seg">
-                <button aria-pressed={!room.settings.isPublic} disabled={!isHost} onClick={() => set({ isPublic: false })}>{t('Private')}</button>
-                <button aria-pressed={room.settings.isPublic} disabled={!isHost} onClick={() => set({ isPublic: true })}>{t('Listed')}</button>
-              </div>
-            </Setting>
-          </div>
+                  {!p.isBot && p.connected && (
+                    <button onClick={() => socket?.emit('room:makeHost', p.id)} className="text-[10px] font-semibold text-fog hover:text-hay" title={t('Make host')}>
+                      <IconCrown size={13} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+          {Array.from({ length: s.maxPlayers - room.players.length }, (_, i) => (
+            <li key={`open-${i}`} className="grid min-h-[70px] place-items-center rounded-[1.25rem] border border-dashed border-white/[0.07] text-xs text-fog/50">
+              {t('Open seat')}
+            </li>
+          ))}
+        </ul>
+        {!self.playerId && <p className="mt-3 text-sm text-fog">{t('This table is full — you’re watching as a spectator.')}</p>}
+      </section>
 
-          <div className="mt-6">
-            {isHost ? (
-              <button className="btn btn-primary btn-lg w-full" disabled={room.players.length < MIN_PLAYERS} onClick={start}>
-                <IconPlay size={16} /> {t('Deal the cards')}
-              </button>
+      {/* ------------------------------------------------ start */}
+      <section className="mt-6 flex flex-col items-center gap-2 text-center">
+        {isHost ? (
+          <>
+            <button className="btn btn-primary btn-lg w-full max-w-sm !py-4 !text-lg" disabled={missing > 0} onClick={start}>
+              <IconPlay size={16} /> {t('Deal the cards')}
+            </button>
+            {missing > 0 ? (
+              <p className="text-sm text-mist">
+                {t('Need {n} more player to start.', { n: missing })}{' '}
+                <button className="font-semibold text-hay underline underline-offset-4" onClick={addBot}>
+                  {t('Add a bot')}
+                </button>{' '}
+                {t('or share the link above.')}
+              </p>
             ) : (
-              <div className="rounded-xl bg-black/20 p-3 text-center text-sm text-fog">{t('Waiting for the host to deal…')}</div>
+              <p className="text-xs text-fog">{t('Everyone’s in? Deal whenever you’re ready.')}</p>
             )}
-            {isHost && room.players.length < MIN_PLAYERS && <p className="mt-2 text-center text-xs text-fog">{t('Add a bot or invite a friend to start.')}</p>}
-            {startError && <p className="mt-2 text-center text-sm text-bull">{startError}</p>}
+          </>
+        ) : (
+          <div className="w-full max-w-sm rounded-xl bg-black/25 p-3 text-sm text-mist">
+            {t('Waiting for {name} to deal…', { name: room.players.find((p) => p.isHost)?.name ?? t('the host') })}
           </div>
-        </aside>
-      </div>
+        )}
+        {startError && <p className="text-sm text-bull">{startError}</p>}
+      </section>
+
+      {/* ------------------------------------------------ settings (secondary) */}
+      <details className="panel group mt-6 p-4 sm:p-5" open={false}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+          <span>
+            <span className="font-display text-lg font-bold">{t('Table rules')}</span>
+            <span className="mt-0.5 block text-xs text-fog">{summary}</span>
+          </span>
+          <span className="text-sm font-semibold text-hay group-open:hidden">{isHost ? t('Change') : t('View')}</span>
+        </summary>
+        {!isHost && <p className="mt-3 text-sm text-fog">{t('Only the host can change these.')}</p>}
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <Setting label={t('Seats')}>
+            <Seg>
+              {Array.from({ length: MAX_PLAYERS - MIN_PLAYERS + 1 }, (_, i) => i + MIN_PLAYERS).map((n) => (
+                <button key={n} aria-pressed={s.maxPlayers === n} disabled={!isHost || n < room.players.length} onClick={() => set({ maxPlayers: n })}>
+                  {n}
+                </button>
+              ))}
+            </Seg>
+          </Setting>
+          <Setting label={t('Game length')}>
+            <Seg>
+              <button aria-pressed={s.mode === 'quick'} disabled={!isHost} onClick={() => set({ mode: 'quick' })}>{t('Quick · 10 turns')}</button>
+              <button aria-pressed={s.mode === 'classic'} disabled={!isHost} onClick={() => set({ mode: 'classic' })}>{t('Race to 66')}</button>
+            </Seg>
+          </Setting>
+          <Setting label={t('Turn timer')} hint={s.turnSeconds ? t('When time runs out a safe card is played for you; a row choice picks the cheapest row. If you leave, a bot plays until you’re back.') : t('Untimed: take as long as you like (private tables only).')}>
+            <Seg>
+              {(s.isPublic ? [15, 30, 45, 60] : [0, 15, 30, 45, 60]).map((sec) => (
+                <button key={sec} aria-pressed={s.turnSeconds === sec} disabled={!isHost} onClick={() => set({ turnSeconds: sec })}>
+                  {sec ? `${sec}s` : <IconTimer size={14} aria-label={t('Untimed')} className="inline" />}
+                  {!sec && <span className="ml-1">{t('Off')}</span>}
+                </button>
+              ))}
+            </Seg>
+          </Setting>
+          <Setting label={t('Bot skill')} hint={t(BOT_HINT[s.botLevel])}>
+            <Seg>
+              {(['easy', 'normal', 'hard'] as const).map((l) => (
+                <button key={l} aria-pressed={s.botLevel === l} disabled={!isHost} onClick={() => set({ botLevel: l })}>
+                  {t(l)}
+                </button>
+              ))}
+            </Seg>
+          </Setting>
+          <Setting label={t('Visibility')} hint={s.isPublic ? t('Listed on the home page for strangers to join.') : t('Only people with the code or link can join.')}>
+            <Seg>
+              <button aria-pressed={!s.isPublic} disabled={!isHost} onClick={() => set({ isPublic: false })}>{t('Private')}</button>
+              <button aria-pressed={s.isPublic} disabled={!isHost} onClick={() => set({ isPublic: true })}>{t('Listed')}</button>
+            </Seg>
+          </Setting>
+        </div>
+      </details>
 
       <AdSlot slot="banner" className="mt-8" />
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
@@ -201,11 +286,16 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
   );
 }
 
-function Setting({ label, children }: { label: string; children: React.ReactNode }) {
+function Setting({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
       <div className="eyebrow mb-2">{label}</div>
       {children}
+      {hint && <p className="mt-1.5 text-xs leading-relaxed text-fog">{hint}</p>}
     </div>
   );
+}
+
+function Seg({ children }: { children: React.ReactNode }) {
+  return <div className="seg flex-wrap">{children}</div>;
 }

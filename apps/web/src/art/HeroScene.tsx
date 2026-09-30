@@ -52,8 +52,8 @@ export function HeroScene() {
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[500px] select-none"
-      style={{ '--hw': 'clamp(34px, 10.5vw, 56px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
+      className="relative mx-auto w-full max-w-[580px] select-none"
+      style={{ '--hw': 'clamp(34px, 10.5vw, 68px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
       aria-label={t('A sixth card lands on a full row and the player takes all five cards')}
       role="img"
     >
@@ -71,7 +71,11 @@ export function HeroScene() {
               <motion.div
                 key={r}
                 className="relative flex items-center gap-[var(--g)]"
-                animate={danger && phase === 'land' ? { x: [0, -6, 6, -4, 3, 0] } : danger && tense ? { x: [0, -1.5, 1.5, 0] } : { x: 0 }}
+                animate={{
+                  ...(danger && phase === 'land' ? { x: [0, -6, 6, -4, 3, 0] } : danger && tense ? { x: [0, -1.5, 1.5, 0] } : { x: 0 }),
+                  // Only the row that matters stays lit while the sixth card is in play.
+                  opacity: !danger && (tense || exploded) ? 0.4 : 1,
+                }}
                 transition={danger && tense ? { duration: phase === 'land' ? 0.4 : 0.22, repeat: phase === 'land' ? 0 : Infinity } : { duration: 0.2 }}
               >
                 <div
@@ -113,6 +117,9 @@ export function HeroScene() {
                       }
                       style={{ width: 'var(--hw)', height: 'calc(var(--hw) * 1.4)' }}
                     >
+                      {sixth && (
+                        <span className={'absolute inset-0 grid place-items-center font-display text-[calc(var(--hw)*0.36)] font-extrabold ' + (danger ? 'text-bull/70' : 'text-bull/25')}>6</span>
+                      )}
                       {sixth && danger && (
                         <motion.div
                           className="absolute inset-0 z-10"

@@ -43,6 +43,7 @@ export interface PublicPlayer {
   handScore: number;
   handCount: number;
   hasPlayed: boolean;
+  session: { games: number; wins: number; bullheads: number };
 }
 
 export interface PlayedCard {
@@ -130,6 +131,7 @@ export interface ClientToServerEvents {
   'room:settings': (settings: Partial<RoomSettings>) => void;
   'room:addBot': () => void;
   'room:remove': (playerId: string) => void;
+  'room:makeHost': (playerId: string) => void;
   'game:start': (ack?: Ack) => void;
   'game:play': (value: number) => void;
   'game:chooseRow': (row: number) => void;

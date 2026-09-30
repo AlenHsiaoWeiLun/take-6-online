@@ -34,7 +34,7 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
   const { t, lang, setLang } = useLang();
 
   const nav = [
-    { to: '/rules', label: t('How to play') },
+    { to: '/learn', label: t('How to play') },
     { to: '/leaderboard', label: t('Leaderboard') },
   ];
 
@@ -42,7 +42,8 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
     <header className="sticky top-0 z-40 border-b border-white/6 bg-ink-950/75 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
         <Link to="/" className="shrink-0" aria-label="Home">
-          <Logo />
+          <span className="hidden min-[420px]:inline"><Logo /></span>
+          <span className="min-[420px]:hidden"><Logo compact /></span>
         </Link>
         {!minimal && (
           <nav className="ml-4 hidden items-center gap-1 md:flex">
@@ -57,13 +58,26 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
             ))}
           </nav>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+          {!minimal && (
+            <NavLink to="/learn" className="whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm font-semibold text-mist hover:text-white md:hidden">
+              {t('How to play')}
+            </NavLink>
+          )}
+          <button
+            className="btn btn-ghost btn-sm !px-2.5 font-bold"
+            onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+            aria-label={lang === 'zh' ? 'Switch to English' : '切換為中文'}
+          >
+            {lang === 'zh' ? 'EN' : '中'}
+          </button>
           {!session.isPlus && (
             <Link to="/plus" className="hidden items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-semibold text-hay hover:bg-hay/10 sm:inline-flex">
               <IconSparkle size={14} /> Plus
             </Link>
           )}
           <SettingsMenu
+            links={minimal ? [] : [{ to: '/leaderboard', label: t('Leaderboard') }, { to: '/rules', label: t('Rules') }, { to: '/plus', label: 'Plus' }, { to: '/contact', label: t('Contact') }]}
             lang={lang}
             onLang={() => setLang(lang === 'zh' ? 'en' : 'zh')}
             muted={muted}
@@ -78,13 +92,13 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
           )}
           <button
             onClick={() => setProfileOpen(true)}
-            className="flex items-center gap-2 rounded-full border border-white/8 bg-white/5 py-1 pl-1 pr-3 transition hover:bg-white/10"
+            className="flex items-center gap-2 rounded-full border border-white/8 bg-white/5 p-1 transition hover:bg-white/10 sm:pr-3"
           >
             <span className="relative">
               <Avatar id={session.avatar} size={30} ring={session.isPlus ? '#f5b942' : undefined} />
               <span className={clsx('absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-ink-950', connected ? 'bg-mint' : 'bg-fog')} />
             </span>
-            <span className="max-w-[7rem] truncate text-sm font-semibold">{session.name || t('Set name')}</span>
+            <span className="hidden max-w-[7rem] truncate text-sm font-semibold sm:block">{session.name || t('Set name')}</span>
           </button>
         </div>
       </div>
@@ -94,7 +108,7 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
   );
 }
 
-function SettingsMenu(p: { lang: string; onLang: () => void; muted: boolean; onMute: () => void; music: boolean; onMusic: () => void }) {
+function SettingsMenu(p: { links: { to: string; label: string }[]; lang: string; onLang: () => void; muted: boolean; onMute: () => void; music: boolean; onMusic: () => void }) {
   const [open, setOpen] = useState(false);
   const { t } = useLang();
   const ref = useRef<HTMLDivElement>(null);
@@ -112,6 +126,15 @@ function SettingsMenu(p: { lang: string; onLang: () => void; muted: boolean; onM
       </button>
       {open && (
         <div className="panel absolute right-0 top-11 z-50 w-56 bg-ink-850 p-1.5">
+          {p.links.length > 0 && (
+            <div className="mb-1 border-b border-white/8 pb-1 md:hidden">
+              {p.links.map((l) => (
+                <Link key={l.to} to={l.to} className={row} onClick={() => setOpen(false)}>
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          )}
           <button className={row} onClick={p.onLang}>
             <span>{t('Language')}</span>
             <span className="text-fog">{p.lang === 'zh' ? '中文 → EN' : 'EN → 中文'}</span>

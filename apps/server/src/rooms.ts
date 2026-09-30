@@ -82,12 +82,10 @@ export class RoomManager {
     socket.on('room:quickplay', (payload, ack) => {
       if (typeof ack !== 'function') return;
       if (payload?.vsBots) {
-        const solo = this.createRoom({ maxPlayers: 4, botLevel: 'normal', isPublic: false });
+        // Practice: untimed, three bots, and the player deals when they're ready.
+        const solo = this.createRoom({ maxPlayers: 4, botLevel: 'normal', isPublic: false, turnSeconds: 0 });
         const res = this.enter(socket, solo);
-        if (res.ok) {
-          solo.fillWithBots(4);
-          solo.startBy(socket.id);
-        }
+        if (res.ok) solo.fillWithBots(4);
         return ack(res);
       }
       const open = [...this.rooms.values()]
@@ -100,6 +98,7 @@ export class RoomManager {
     socket.on('room:settings', (patch) => room()?.updateSettings(socket.id, patch ?? {}));
     socket.on('room:addBot', () => room()?.addBot(socket.id));
     socket.on('room:remove', (playerId) => room()?.remove(socket.id, String(playerId)));
+    socket.on('room:makeHost', (playerId) => room()?.makeHost(socket.id, String(playerId)));
     socket.on('game:start', (ack) => {
       const current = room();
       const error = current ? current.startBy(socket.id) : 'You are not in a room.';

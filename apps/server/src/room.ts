@@ -48,7 +48,8 @@ const TIMING = {
   publicAutoStart: 20_000,
 };
 
-export const TURN_SECONDS = [15, 30, 45, 60];
+/** 0 = untimed (private practice tables only; public tables always run a clock). */
+export const TURN_SECONDS = [0, 15, 30, 45, 60];
 
 export const DEFAULT_SETTINGS: RoomSettings = {
   maxPlayers: 6,
@@ -73,6 +74,8 @@ interface Seat {
   handScore: number;
   rowsTaken: number;
   biggestTake: number;
+  /** Running tally for everyone who stays at this table across rematches. */
+  session: { games: number; wins: number; bullheads: number };
   /** Left mid-game; their turns are auto-played until they rejoin. */
   left: boolean;
 }
@@ -271,6 +274,7 @@ export class Room {
       handScore: 0,
       rowsTaken: 0,
       biggestTake: 0,
+      session: { games: 0, wins: 0, bullheads: 0 },
       left: false,
     };
   }
@@ -308,6 +312,15 @@ export class Room {
     this.broadcast();
   }
 
+  /** Hand the host role to another connected person (rotating hosts between games). */
+  makeHost(socketId: string, playerId: string) {
+    if (!this.isHost(socketId) || (this.phase !== 'lobby' && this.phase !== 'gameEnd')) return;
+    const next = this.seatById(playerId);
+    if (!next || next.isBot || next.sockets.size === 0) return;
+    this.hostId = next.id;
+    this.broadcast();
+  }
+
   addBot(socketId: string) {
     if (!this.isHost(socketId) || this.phase !== 'lobby') return;
     if (this.seats.length >= this.settings.maxPlayers) return;
@@ -317,6 +330,7 @@ export class Room {
 
   fillWithBots(total: number) {
     while (this.seats.length < Math.min(total, this.settings.maxPlayers)) this.seats.push(this.newSeat(null));
+    this.broadcast();
   }
 
   remove(socketId: string, playerId: string) {
@@ -421,7 +435,8 @@ export class Room {
     this.played = [];
     this.resolvingIndex = null;
     this.choosingPlayerId = null;
-    this.deadline = Date.now() + this.settings.turnSeconds * 1000;
+    const timed = this.settings.turnSeconds > 0;
+    this.deadline = timed ? Date.now() + this.settings.turnSeconds * 1000 : null;
     this.history.board_history.push(this.rows.map((r) => r.cards.map((c) => c.value)));
     this.broadcast();
 
@@ -429,9 +444,10 @@ export class Room {
       if (seat.isBot) this.scheduleBotPlay(seat);
       else if (!isConnected(seat) || seat.left) this.scheduleAbsentAction(seat);
     }
-    this.later(this.settings.turnSeconds * 1000, () => {
-      for (const seat of this.seats) if (!seat.selected) this.autoPlay(seat);
-    });
+    if (timed)
+      this.later(this.settings.turnSeconds * 1000, () => {
+        for (const seat of this.seats) if (!seat.selected) this.autoPlay(seat);
+      });
   }
 
   play(socketId: string, value: number) {
@@ -523,12 +539,12 @@ export class Room {
     if (target === -1) {
       this.phase = 'choosingRow';
       this.choosingPlayerId = seat.id;
-      const window = Math.min(this.settings.turnSeconds * 1000, TIMING.rowChoiceMax);
-      this.deadline = Date.now() + window;
+      const window = this.settings.turnSeconds > 0 ? Math.min(this.settings.turnSeconds * 1000, TIMING.rowChoiceMax) : 0;
+      this.deadline = window ? Date.now() + window : null;
       this.broadcast();
       if (seat.isBot) this.later(700, () => this.chooseRowFor(seat, this.brain.chooseRow(this.rows)));
       else if (!isConnected(seat) || seat.left) this.scheduleAbsentAction(seat);
-      this.later(window, () => this.autoPlay(seat));
+      if (window) this.later(window, () => this.autoPlay(seat));
       return;
     }
 
@@ -604,6 +620,11 @@ export class Room {
     this.phase = 'gameEnd';
     this.deadline = null;
     const ranks = rankScores(this.seats.map((s) => s.score));
+    this.seats.forEach((s, i) => {
+      s.session.games += 1;
+      s.session.bullheads += s.score;
+      if (ranks[i] === 1) s.session.wins += 1;
+    });
     const standings = this.seats
       .map((s, i) => ({
         playerId: s.id,
@@ -720,6 +741,7 @@ export class Room {
         score: s.score,
         handScore: s.handScore,
         handCount: s.hand.length,
+        session: s.session,
         hasPlayed: !!s.selected,
       })),
       spectatorCount: this.spectators.size,
@@ -772,10 +794,12 @@ function emptyHistory(): FaiHistory {
 
 export function sanitizeSettings(input: RoomSettings, seated: number): RoomSettings {
   const maxPlayers = Math.max(MIN_PLAYERS, seated, Math.min(MAX_PLAYERS, Math.round(Number(input.maxPlayers) || 6)));
+  const seconds = TURN_SECONDS.includes(Number(input.turnSeconds)) ? Number(input.turnSeconds) : 30;
   return {
     maxPlayers,
     mode: input.mode === 'classic' ? 'classic' : 'quick',
-    turnSeconds: TURN_SECONDS.includes(Number(input.turnSeconds)) ? Number(input.turnSeconds) : 30,
+    // Strangers can't be kept waiting forever, so public tables always have a clock.
+    turnSeconds: input.isPublic && seconds === 0 ? 30 : seconds,
     botLevel: (['easy', 'normal', 'hard'] as const).includes(input.botLevel) ? input.botLevel : 'normal',
     isPublic: !!input.isPublic,
   };

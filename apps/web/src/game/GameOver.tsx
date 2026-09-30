@@ -11,7 +11,7 @@ import { AdSlot } from '../components/AdSlot';
 import { WinnerArt } from '../art/Illustrations';
 import { Art } from '../art/Art';
 import { BullMark } from '../art/BullMark';
-import { Bullhead, IconBot, IconSparkle } from '../art/icons';
+import { Bullhead, IconBot, IconCrown, IconSparkle, IconTakeRow, IconTrophy } from '../art/icons';
 import { useSession } from '../state/session';
 import { sound } from '../lib/sound';
 import { useCountdown } from './useCountdown';
@@ -55,10 +55,11 @@ export function GameOver({
     celebrated.current = true;
     if (iWon) {
       sound.play('win');
-      const colors = ['#ff6b6b', '#fcc419', '#51cf66', '#4dabf7', '#b197fc', '#fff7ea'];
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.35 }, colors });
-      setTimeout(() => confetti({ particleCount: 60, angle: 60, spread: 60, origin: { x: 0, y: 0.6 }, colors }), 250);
-      setTimeout(() => confetti({ particleCount: 60, angle: 120, spread: 60, origin: { x: 1, y: 0.6 }, colors }), 400);
+      // Light, short and from the edges, so it never sits on top of the ranking.
+      const colors = ['#ff6b6b', '#fcc419', '#51cf66', '#4dabf7', '#fff7ea'];
+      const base = { disableForReducedMotion: true, ticks: 140, gravity: 1.2, scalar: 0.9, colors };
+      confetti({ ...base, particleCount: 40, angle: 60, spread: 55, origin: { x: 0, y: 0.7 } });
+      confetti({ ...base, particleCount: 40, angle: 120, spread: 55, origin: { x: 1, y: 0.7 } });
     } else if (self.playerId) sound.play('lose');
   }, [result, stage, iWon, self.playerId]);
 
@@ -100,16 +101,17 @@ export function GameOver({
               s.playerId === self.playerId && s.rank !== 1 && 'border-white/20',
             )}
           >
-            <span className={clsx('w-6 text-center font-display text-lg font-extrabold tabular', s.rank === 1 ? 'text-hay' : 'text-fog')}>
-              {s.rank === 1 ? '🏆' : s.rank === 2 ? '🥈' : s.rank === 3 ? '🥉' : s.rank}
-            </span>
-            <Avatar id={s.avatar} size={36} />
+            <RankBadge rank={s.rank} />
+            <Avatar id={s.avatar} size={32} />
             <span className="min-w-0 flex-1 truncate font-semibold">
               {s.playerId === self.playerId ? t('You') : s.name}
               {s.isBot && <IconBot size={13} className="ml-1.5 inline text-fog" />}
             </span>
-            <span className="flex items-center gap-1 font-display text-lg font-bold tabular">
-              <AnimatedNumber value={s.score} /> <Bullhead size={14} className="text-bull" />
+            <span className="text-right leading-tight">
+              <span className="flex items-center justify-end gap-1 font-display text-lg font-bold tabular">
+                <AnimatedNumber value={s.score} /> <Bullhead size={14} className="text-bull" />
+              </span>
+              <span className="block text-[10px] font-medium text-fog">{t('{n} rows taken', { n: s.rowsTaken })}</span>
             </span>
             {ratings[s.playerId] && (
               <motion.span
@@ -133,29 +135,28 @@ export function GameOver({
 
       <GameStats standings={result.standings} selfId={self.playerId} />
 
-      {self.playerId && !user && (
-        <p className="mt-4 text-center text-xs text-fog">{t('Sign in from your profile to save wins and climb the leaderboard.')}</p>
-      )}
-
-      <AdSlot slot="results" className="mt-5" />
-
+      {/* Main actions first; account/Plus prompts and the ad sit underneath so "Play again" is never pushed away. */}
       <div className="mt-5 grid grid-cols-2 gap-2.5">
         {me?.isHost ? (
-          <div className="flex flex-col gap-1.5">
-            <button className="btn btn-primary" onClick={() => socket?.emit('game:rematch', { instant: true })}>{t('Play again')}</button>
-            <button className="text-xs font-semibold text-fog hover:text-white" onClick={() => socket?.emit('game:rematch')}>{t('Change settings')}</button>
-          </div>
+          <button className="btn btn-primary" onClick={() => socket?.emit('game:rematch', { instant: true })}>{t('Play again')}</button>
         ) : (
-          <div className="grid place-items-center rounded-xl bg-black/20 px-3 text-center text-xs text-fog">{t('Waiting for the host…')}</div>
+          <div className="grid min-h-[46px] place-items-center rounded-xl bg-black/25 px-3 text-center text-xs text-mist">{t('Waiting for the host…')}</div>
         )}
         <button className="btn btn-ghost" onClick={onLeave}>{t('Leave table')}</button>
       </div>
+      {me?.isHost && (
+        <button className="btn btn-ghost btn-sm mt-2 w-full" onClick={() => socket?.emit('game:rematch')}>
+          {t('Back to lobby to change settings')}
+        </button>
+      )}
 
+      {self.playerId && !user && <p className="mt-4 text-center text-xs text-fog">{t('Sign in from your profile to save wins and climb the leaderboard.')}</p>}
       {!session.isPlus && (
-        <Link to="/plus" className="mt-4 flex items-center justify-center gap-1.5 text-sm font-semibold text-hay hover:underline">
-          <IconSparkle size={14} /> {t('Go ad-free with {plus}', { plus: BRAND.plus })}
+        <Link to="/plus" className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-hay/90 hover:underline">
+          <IconSparkle size={13} /> {t('Go ad-free with {plus}', { plus: BRAND.plus })}
         </Link>
       )}
+      <AdSlot slot="results" className="mt-4" />
     </Modal>
   );
 }
@@ -201,10 +202,10 @@ function GameStats({ standings, selfId }: { standings: import('@take6/shared').S
   const clean = standings.filter((s) => s.rowsTaken === 0);
   const name = (s: { playerId: string; name: string }) => (s.playerId === selfId ? t('You') : s.name);
   const stats = [
-    gulp && gulp.biggestTake > 0 && { emoji: '🐮', label: t('Biggest gulp'), value: t('{name} · {n} in one row', { name: name(gulp), n: gulp.biggestTake }) },
-    rows && rows.rowsTaken > 1 && { emoji: '🧺', label: t('Row collector'), value: t('{name} · {n} rows', { name: name(rows), n: rows.rowsTaken }) },
-    clean.length > 0 && { emoji: '✨', label: t('Spotless'), value: clean.map(name).join(', ') },
-  ].filter(Boolean) as { emoji: string; label: string; value: string }[];
+    gulp && gulp.biggestTake > 0 && { icon: <Bullhead size={12} />, label: t('Biggest gulp'), value: t('{name} · {n} in one row', { name: name(gulp), n: gulp.biggestTake }) },
+    rows && rows.rowsTaken > 1 && { icon: <IconTakeRow size={13} />, label: t('Row collector'), value: t('{name} · {n} rows', { name: name(rows), n: rows.rowsTaken }) },
+    clean.length > 0 && { icon: <IconSparkle size={12} />, label: t('Spotless'), value: clean.map(name).join(', ') },
+  ].filter(Boolean) as { icon: React.ReactNode; label: string; value: string }[];
   if (!stats.length) return null;
   return (
     <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -217,7 +218,7 @@ function GameStats({ standings, selfId }: { standings: import('@take6/shared').S
           className="rounded-xl bg-white/[0.04] px-3 py-2"
         >
           <div className="text-[11px] font-bold uppercase tracking-wider text-fog">
-            {st.emoji} {st.label}
+            <span className="inline-flex items-center gap-1">{st.icon} {st.label}</span>
           </div>
           <div className="mt-0.5 truncate text-sm font-semibold">{st.value}</div>
         </motion.div>
@@ -311,8 +312,8 @@ function ScoreDrop({ standings, selfId, onSkip }: { standings: import('@take6/sh
               <Avatar id={s.avatar} size={40} ring={s.rank === 1 ? '#f5b942' : undefined} className="mt-1" />
               <div className="mt-1 max-w-full truncate text-xs font-semibold text-mist">{s.playerId === selfId ? t('You') : s.name}</div>
               {s.rank === 1 && (
-                <motion.span className="absolute -top-2 text-2xl" initial={{ scale: 0, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ delay: 1.7, type: 'spring', stiffness: 500, damping: 14 }}>
-                  👑
+                <motion.span className="absolute -top-3 grid size-8 place-items-center rounded-full bg-hay text-ink-950 shadow-lg" initial={{ scale: 0, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ delay: 1.7, type: 'spring', stiffness: 500, damping: 14 }}>
+                  <IconCrown size={18} strokeWidth={2.2} />
                 </motion.span>
               )}
             </div>
@@ -320,5 +321,16 @@ function ScoreDrop({ standings, selfId, onSkip }: { standings: import('@take6/sh
         })}
       </div>
     </motion.div>
+  );
+}
+
+/** Rank as a medal badge (one icon family, no emoji). */
+export function RankBadge({ rank }: { rank: number }) {
+  const style =
+    rank === 1 ? 'bg-hay text-ink-950' : rank === 2 ? 'bg-[#cfd4dc] text-ink-950' : rank === 3 ? 'bg-[#d08b4f] text-ink-950' : 'bg-white/8 text-mist';
+  return (
+    <span className={clsx('grid size-7 shrink-0 place-items-center rounded-full font-display text-sm font-extrabold tabular', style)} aria-label={`#${rank}`}>
+      {rank === 1 ? <IconTrophy size={15} strokeWidth={2.2} /> : rank}
+    </span>
   );
 }
