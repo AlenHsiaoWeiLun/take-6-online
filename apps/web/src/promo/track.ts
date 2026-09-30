@@ -5,7 +5,7 @@
  */
 export const BPM = 120;
 export const BEAT = 60 / BPM;
-export const DURATION = 20.5;
+export const DURATION = 18.3;
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
@@ -148,97 +148,89 @@ export function scheduleTrack(ac: BaseAudioContext, t0 = 0) {
     o.stop(at + dur + 0.05);
   };
 
-  // A minor loop: Am · F · C · G, one chord per bar.
-  const CHORDS = [
-    [57, 60, 64],
-    [53, 57, 60],
-    [55, 60, 64],
-    [55, 59, 62],
-  ];
-  const ROOTS = [45, 41, 48, 43];
-  const groove = (bar: number, { hats16 = false, stabs = true, clapK = 1, bassK = 1 } = {}) => {
-    const s0 = bar * 2;
-    const ci = bar % 4;
-    for (let b = 0; b < 4; b++) kick(s0 + b * BEAT);
-    clap(s0 + BEAT, clapK);
-    clap(s0 + 3 * BEAT, clapK);
-    for (let e = 0; e < (hats16 ? 16 : 8); e++) {
-      const step = hats16 ? BEAT / 4 : BEAT / 2;
-      if (!hats16 && e % 2 === 0) continue;
-      hat(s0 + e * step, hats16 && e % 4 === 2 ? 1.2 : 0.8, !hats16 && e === 7);
-    }
-    for (let e = 0; e < 8; e++) bass(s0 + e * (BEAT / 2), ROOTS[ci] + (e % 2 ? 12 : 0), 0.2, bassK);
-    if (stabs) [1, 3, 5, 7].forEach((e) => stab(s0 + e * (BEAT / 2), CHORDS[ci]));
+  // One chord per 2 s bar: confident major at first, minor once the friends show their cards.
+  const CH: Record<string, number[]> = { C: [60, 64, 67], G: [59, 62, 67], Am: [57, 60, 64], F: [57, 60, 65] };
+  const ROOT: Record<string, number> = { C: 48, G: 43, Am: 45, F: 41 };
+  const BARS = ['C', 'G', 'Am', 'F', 'Am', 'Am', 'F', 'G', 'C', 'C'];
+  const chordAt = (s: number) => BARS[Math.min(BARS.length - 1, Math.floor(s / 2 + 1e-6))];
+  const loop = (from: number, to: number, step: number, fn: (s: number, i: number) => void) => {
+    for (let i = 0, s = from; s < to - 1e-6; i++, s = from + i * step) fn(Math.round(s * 1000) / 1000, i);
   };
+  const drums = (from: number, to: number, { hats16 = false, claps = true, kickK = 1, halfTime = false } = {}) => {
+    loop(from, to, halfTime ? BEAT * 2 : BEAT, (s) => kick(s, kickK));
+    if (claps) loop(from, to, BEAT, (s) => Math.round(s / BEAT) % 2 === 1 && clap(s, halfTime ? 0.55 : 1));
+    loop(from, to, hats16 ? BEAT / 4 : BEAT / 2, (s, i) => {
+      if (hats16) hat(s, i % 4 === 2 ? 1.2 : 0.75);
+      else if (i % 2 === 1) hat(s, halfTime ? 0.55 : 0.85);
+    });
+  };
+  const bassline = (from: number, to: number, k = 1) => loop(from, to, BEAT / 2, (s, i) => bass(s, ROOT[chordAt(s)] + (i % 2 ? 12 : 0), 0.2, k));
+  const stabs = (from: number, to: number) => loop(from, to, BEAT / 2, (s, i) => i % 2 === 1 && stab(s, CH[chordAt(s)]));
 
-  // ---------------------------------------------------------------- bar 1 · hook (0–2)
-  boom(0, 0.8);
-  kick(0.25, 0.9);
-  kick(0.5);
-  clap(0.5);
-  whoosh(1.0, 0.35, true);
-  kick(1.5);
-  kick(1.75, 0.8);
-  [69, 72, 76, 79].forEach((m, i) => pluck(1.0 + i * 0.125, m));
+  // ---------------------------------------------------------------- 0–5 · "nailed it": relaxed, major, tidy
+  drums(0, 5, { halfTime: true });
+  bassline(0, 5, 0.55);
+  loop(0, 5, BEAT, (s, i) => pluck(s, CH[chordAt(s)][i % 3] + 12, 0.8));
+  kick(0.5, 1.1);
+  clap(0.5, 1.1);
+  osc(T(1.0), 0.18, 'square', hz(72), hz(84), 0.06, 0.003, 3000);
+  loop(2.0, 3.0, 1 / 14, (s, i) => pluck(s, [72, 74, 76, 79, 81, 84, 86][i % 7] + (i >= 7 ? 12 : 0), 0.55));
+  [3.0, 3.5].forEach((s) => pluck(s, 88, 1.1));
+  tick(3.5, 0.8);
+  tick(4.0, 2.2);
+  thock(4.0, 8);
+  whoosh(4.02, 0.26, true);
+  [4.5, 4.625, 4.75].forEach((s, i) => thock(s, i));
 
-  // ---------------------------------------------------------------- bar 2 · everyone picks (2–4)
-  groove(1, { stabs: false });
-  [2.0, 2.5, 3.0, 3.5].forEach((s, i) => {
-    for (let k = 0; k < 6; k++) tick(s + 0.05 + k * 0.05, 0.7);
-    thock(s + 0.35, i);
+  // ---------------------------------------------------------------- 5–9.5 · "your friends:" minor, closer, tighter
+  crash(5.0, 0.5);
+  drums(5.0, 7.0, { claps: false, kickK: 0.9 });
+  osc(T(5.0), 4.4, 'sawtooth', hz(33), hz(33), 0.05, 0.6, 400);
+  loop(5.0, 7.0, BEAT / 2, (s) => bass(s, 45, 0.2, 0.75));
+  [6.0, 6.5, 7.0].forEach((s, i) => {
+    whoosh(s - 0.14, 0.14, true);
+    kick(s, 1.15);
+    snare(s, 0.7 + i * 0.1);
+    stab(s, CH.Am.map((m) => m + 12 * (i === 2 ? 1 : 0)), 0.3, 1.2 + i * 0.3);
   });
-
-  // ---------------------------------------------------------------- bar 3 · reveal, lowest first (4–6)
-  crash(4.0, 0.7);
-  groove(2);
-  [4.0, 4.125, 4.25, 4.375].forEach((s, i) => thock(s, i));
-  whoosh(4.5, 0.25);
-  [5.0, 5.25, 5.5, 5.75].forEach((s, i) => thock(s, 2 + i));
-
-  // ---------------------------------------------------------------- bar 4 · cards rain into rows (6–8)
-  groove(3, { hats16: true });
-  for (let i = 0; i < 8; i++) thock(6.0 + i * 0.25, i);
-
-  // ---------------------------------------------------------------- bar 5 · tension (8–10)
-  kick(8.0, 1.2);
-  crash(8.0, 0.5);
-  thock(8.0, 8);
-  for (let b = 1; b < 4; b++) kick(8.0 + b * BEAT, 0.9);
-  kick(9.5, 0.9);
-  for (let i = 0; i < 8; i++) snare(8.0 + i * 0.125, 0.35 + i * 0.03);
-  for (let i = 0; i < 16; i++) snare(9.0 + i * 0.0625, 0.55 + i * 0.03);
-  riser(8.0, 2.0, 1);
-  for (let e = 0; e < 8; e++) bass(8.0 + e * 0.25, 45, 0.2, 0.8);
-
-  // ---------------------------------------------------------------- bar 6 · the sixth card (10–12)
-  tick(10.0, 1.4);
-  tick(10.25, 1.4);
-  whoosh(10.1, 0.32, true);
-  boom(10.5, 1.3);
-  kick(10.5, 1.3);
-  osc(T(10.5), 1.4, 'sine', 55, 40, 0.5, 0.01);
-  riser(11.25, 0.75, 0.8);
-
-  // ---------------------------------------------------------------- bar 7–8 · TAKE THE ROW (12–16)
-  boom(12.0, 1.2);
-  moo(12.12);
-  groove(6, { hats16: true, clapK: 1.1, bassK: 1.1 });
-  for (let n = 0; n < 9; n++) coin(12.25 + n * 0.083, n);
-  groove(7, { hats16: true, clapK: 1.1, bassK: 1.1 });
-  [14.0, 14.5, 15.0, 15.5].forEach((s) => {
-    snare(s, 0.8);
-    thock(s, 6);
+  // the reveal goes wrong: glitch + a sour chord
+  loop(7.0, 7.12, 0.02, (s, i) => noise(T(s), 0.018, 0.3, 'bandpass', 1200 + i * 900, 3));
+  stab(7.02, [58, 61, 65], 0.5, 1.5);
+  [7.25, 7.33, 7.75, 7.83].forEach((s, i) => kick(s, i % 2 ? 0.5 : 0.8));
+  [8.0, 8.25, 8.5].forEach((s, i) => {
+    kick(s, 1);
+    snare(s, 0.6);
+    thock(s, 3 + i);
   });
-  riser(15.5, 0.5, 0.7);
+  whoosh(8.62, 0.3, true);
+  loop(8.75, 9.5, BEAT / 2, (s) => tick(s, 1.3));
+  riser(8.75, 0.75, 1);
+  // 9.5–10.0: the dropped beat. Nothing.
 
-  // ---------------------------------------------------------------- bar 9–10 · logo, play now (16–20)
-  boom(16.0, 1.1);
-  stab(16.0, [57, 60, 64, 69], 0.9, 1.6);
-  groove(8, { stabs: false, bassK: 0.8 });
-  clap(17.5, 1.2);
-  groove(9, { stabs: false, bassK: 0.7, clapK: 0.8 });
-  boom(19.5, 0.7);
-  stab(19.5, [57, 60, 64, 69], 1.0, 1.4);
+  // ---------------------------------------------------------------- 10 · slam, vacuum, +9
+  boom(10.0, 1.3);
+  kick(10.0, 1.3);
+  noise(T(10.2), 0.5, 0.32, 'bandpass', 5000, 1.2, 350);
+  [0, 1, 2, 3, 4].forEach((c) => thock(10.2 + c * 0.045 + 0.35, 5 + c));
+  for (let k = 0; k < 9; k++) coin(10.55 + k * 0.05, k);
+  snare(11.0, 1);
+  crash(11.0);
+  moo(11.05);
+  drums(11.0, 15.0, { hats16: true });
+  bassline(11.0, 15.0, 1.05);
+  stabs(11.0, 15.0);
+  // friends laughing, then the pile of cards lands on you
+  [13.0, 13.25, 13.5].forEach((s, i) => [0, 0.06, 0.12].forEach((d, j) => pluck(s + d, 88 - i * 2 - j * 3, 1.1)));
+  loop(13.5, 14.0, 1 / 16, (s, i) => thock(s, i));
+
+  // ---------------------------------------------------------------- 15–18.3 · logo, one more round
+  boom(15.0, 1.1);
+  stab(15.0, [60, 64, 67, 72], 1.1, 1.6);
+  drums(15.5, 17.5, { kickK: 0.85 });
+  bassline(15.5, 17.5, 0.7);
+  loop(15.5, 17.5, BEAT, (s, i) => pluck(s, CH.C[i % 3] + 12, 0.7));
+  boom(17.5, 0.6);
+  stab(17.5, [60, 64, 67, 72], 0.8, 1.3);
 }
 
 /** Renders the whole soundtrack offline and returns a 16-bit stereo WAV. */
