@@ -139,7 +139,11 @@ export class RoomManager {
   }
 
   private enter(socket: GameSocket, room: Room): { ok: true; code: string } | { ok: false; error: string } {
-    if (socket.data.roomCode === room.code && room.hasSocket(socket.id)) return { ok: true, code: room.code };
+    if (socket.data.roomCode === room.code && room.hasSocket(socket.id)) {
+      // Already seated (e.g. create → navigate → join): resend the state the new page missed.
+      socket.emit('room:state', room.snapshotFor(socket.id));
+      return { ok: true, code: room.code };
+    }
     this.leaveCurrent(socket, true);
     const result = room.join(socket.id, socket.data.identity);
     if (!result.ok) return result;

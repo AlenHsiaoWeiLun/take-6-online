@@ -43,6 +43,19 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? '✔' : '✘'} ${name}${detail ? ` — ${detail}` : ''}`);
 };
 
+// 0. create → open the room page → join again (the page wasn't listening when the first state went out)
+{
+  const h = await connect('Host');
+  const { code } = await ask(h, 'room:create', { maxPlayers: 4 });
+  await wait(300);
+  let got = null;
+  h.once('room:state', (snap) => (got = snap));
+  const res = await ask(h, 'room:join', { code });
+  await until(() => got, 3000, 'state after re-join').catch(() => {});
+  check('create → join: room page receives the lobby', res.ok && got?.room.code === code);
+  h.close();
+}
+
 // 1. reconnect -----------------------------------------------------------
 {
   const a = await connect('Ana');
