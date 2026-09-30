@@ -53,7 +53,7 @@ export function HeroScene() {
   return (
     <div
       className="relative mx-auto w-full max-w-[580px] select-none"
-      style={{ '--hw': 'clamp(34px, 10.5vw, 68px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
+      style={{ '--hw': 'clamp(30px, min(10.5vw, calc((100dvh - 180px) / 6.8)), 68px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
       aria-label={t('A sixth card lands on a full row and the player takes all five cards')}
       role="img"
     >

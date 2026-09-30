@@ -66,8 +66,9 @@ export function Home() {
 
           {/* Friends are the front door: create or join, nothing else competing for attention. */}
           <div className="mt-8 grid max-w-md grid-cols-2 gap-3">
-            <button className="btn btn-primary btn-lg !py-4 !text-lg" disabled={!connected || !!busy} onClick={create}>
-              {busy === 'create' ? t('Dealing…') : t('Create room')}
+            <button className="btn btn-primary btn-lg flex-col !gap-0 !py-3" disabled={!connected || !!busy} onClick={create}>
+              <span className="text-lg">{busy === 'create' ? t('Dealing…') : t('Create room')}</span>
+              <span className="text-xs font-medium text-white/80">{t('Get a link for friends')}</span>
             </button>
             {joining ? (
               <form
@@ -99,8 +100,9 @@ export function Home() {
                 </div>
               </form>
             ) : (
-              <button className="btn btn-ghost btn-lg !py-4 !text-lg" disabled={!connected} onClick={() => setJoining(true)}>
-                {t('Join room')}
+              <button className="btn btn-ghost btn-lg flex-col !gap-0 !py-3" disabled={!connected} onClick={() => setJoining(true)}>
+                <span className="text-lg">{t('Join room')}</span>
+                <span className="text-xs font-medium text-fog">{t('I have a 4-letter code')}</span>
               </button>
             )}
           </div>
@@ -109,13 +111,22 @@ export function Home() {
               <IconClose size={14} /> {error}
             </p>
           )}
+          <ol className="mt-3 flex max-w-md flex-wrap items-center gap-x-2 gap-y-1 text-xs text-mist">
+            <li className="flex items-center gap-1"><b className="grid size-4 place-items-center rounded-full bg-white/10 text-[10px]">1</b> {t('Create a room')}</li>
+            <IconArrowRight size={12} className="text-fog" />
+            <li className="flex items-center gap-1"><b className="grid size-4 place-items-center rounded-full bg-white/10 text-[10px]">2</b> {t('Send the link (LINE works)')}</li>
+            <IconArrowRight size={12} className="text-fog" />
+            <li className="flex items-center gap-1"><b className="grid size-4 place-items-center rounded-full bg-white/10 text-[10px]">3</b> {t('Everyone in → Deal')}</li>
+          </ol>
           <div className="mt-4 flex max-w-md flex-wrap items-center gap-2 text-sm text-fog">
             <span>{t('Alone?')}</span>
             <button className="btn btn-ghost btn-sm" disabled={!connected || !!busy} onClick={() => quick(true)}>
               <IconBot size={15} /> {busy === 'bots' ? t('Dealing…') : t('Practise vs bots')}
+              <span className="font-normal text-fog">· {t('no waiting')}</span>
             </button>
             <button className="btn btn-ghost btn-sm" disabled={!connected || !!busy} onClick={() => quick(false)}>
               <IconGlobe size={15} /> {busy === 'online' ? t('Finding…') : t('Match with strangers')}
+              <span className="font-normal text-fog">· {t('starts in 20s')}</span>
             </button>
           </div>
           {!connected && <p className="mt-3 text-sm text-fog">{t('Connecting to the game server…')}</p>}

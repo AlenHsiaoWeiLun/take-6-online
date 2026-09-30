@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useRoom } from '../state/room';
 import { useSession } from '../state/session';
@@ -29,7 +29,7 @@ export function RoomPage() {
     return (
       <>
         <Header />
-        <Notice title={connected ? t('Finding your seat…') : t('Connecting…')} body={t('Room {code}', { code })} spinner />
+        <JoiningRoom code={code} connected={connected} />
       </>
     );
   }
@@ -85,6 +85,47 @@ function ReconnectBanner() {
         <span className="size-2 animate-pulse rounded-full bg-hay" />
         {t('Connection lost — reconnecting. Your seat is kept.')}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Joining a room: says exactly what is happening, explains the cold start of an idle
+ * server, and offers a way out if it takes unusually long.
+ */
+function JoiningRoom({ code, connected }: { code: string; connected: boolean }) {
+  const t = useT();
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const start = Date.now();
+    const timer = window.setInterval(() => setElapsed((Date.now() - start) / 1000), 500);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const title = connected ? t('Opening room {code}…', { code }) : t('Connecting to the game server…');
+  const detail =
+    elapsed > 12
+      ? t('This is taking longer than usual. Check your connection, or try again.')
+      : !connected && elapsed > 2.5
+        ? t('The server was asleep and is waking up — this takes about 5 seconds the first time.')
+        : connected
+          ? t('Taking your seat at the table.')
+          : '';
+
+  return (
+    <div className="mx-auto grid max-w-md place-items-center px-4 py-20 text-center" role="status" aria-live="polite">
+      <CardLoader label={title} />
+      <p className="mt-2 min-h-[2.5rem] text-sm text-mist">{detail}</p>
+      {elapsed > 12 && (
+        <div className="mt-3 flex gap-2.5">
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+            {t('Try again')}
+          </button>
+          <Link to="/" className="btn btn-ghost">
+            {t('Back to the lobby')}
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

@@ -38,6 +38,9 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
   const missing = Math.max(0, MIN_PLAYERS - room.players.length);
   const full = room.players.length >= room.settings.maxPlayers;
   const s = room.settings;
+  const humans = room.players.filter((p) => !p.isBot).length;
+  const bots = room.players.length - humans;
+  const hostName = room.players.find((p) => p.isHost)?.name ?? t('the host');
 
   const commitName = () => {
     const clean = name.trim().slice(0, 16);
@@ -67,7 +70,22 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
   ].join(' · ');
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+    <div className="mx-auto max-w-5xl px-4 pt-4 sm:pt-6">
+      <StepGuide
+        steps={
+          autoStart !== null
+            ? [
+                { label: t('Matched with strangers'), done: true },
+                { label: t('{n} of {max} seated', { n: room.players.length, max: s.maxPlayers }), done: false },
+                { label: t('Starts automatically in {s}s', { s: Math.ceil(autoStart) }), done: false },
+              ]
+            : [
+                { label: t('Invite friends with the link'), done: humans > 1 || copied },
+                { label: t('{h} people, {b} bots seated', { h: humans, b: bots }), done: room.players.length >= MIN_PLAYERS },
+                { label: isHost ? t('You press “Deal the cards”') : t('{name} starts the game', { name: hostName }), done: false },
+              ]
+        }
+      />
       {/* ------------------------------------------------ invite + your seat */}
       <section className="panel grid gap-5 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-6">
         <div>
@@ -82,6 +100,14 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
             <button className="btn btn-primary btn-sm" onClick={copy}>
               {copied ? <IconCheck size={16} /> : <IconCopy size={16} />} {copied ? t('Copied') : t('Copy invite link')}
             </button>
+            <a
+              className="btn btn-sm !bg-[#06C755] !text-white"
+              href={`https://line.me/R/msg/text/?${encodeURIComponent(`${t('Join my Bullheads table')} ${link}`)}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              LINE
+            </a>
             {'share' in navigator && (
               <button className="btn btn-ghost btn-sm" onClick={share}>
                 <IconShare size={16} /> {t('Share')}
@@ -199,33 +225,6 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
         {!self.playerId && <p className="mt-3 text-sm text-fog">{t('This table is full — you’re watching as a spectator.')}</p>}
       </section>
 
-      {/* ------------------------------------------------ start */}
-      <section className="mt-6 flex flex-col items-center gap-2 text-center">
-        {isHost ? (
-          <>
-            <button className="btn btn-primary btn-lg w-full max-w-sm !py-4 !text-lg" disabled={missing > 0} onClick={start}>
-              <IconPlay size={16} /> {t('Deal the cards')}
-            </button>
-            {missing > 0 ? (
-              <p className="text-sm text-mist">
-                {t('Need {n} more player to start.', { n: missing })}{' '}
-                <button className="font-semibold text-hay underline underline-offset-4" onClick={addBot}>
-                  {t('Add a bot')}
-                </button>{' '}
-                {t('or share the link above.')}
-              </p>
-            ) : (
-              <p className="text-xs text-fog">{t('Everyone’s in? Deal whenever you’re ready.')}</p>
-            )}
-          </>
-        ) : (
-          <div className="w-full max-w-sm rounded-xl bg-black/25 p-3 text-sm text-mist">
-            {t('Waiting for {name} to deal…', { name: room.players.find((p) => p.isHost)?.name ?? t('the host') })}
-          </div>
-        )}
-        {startError && <p className="text-sm text-bull">{startError}</p>}
-      </section>
-
       {/* ------------------------------------------------ settings (secondary) */}
       <details className="panel group mt-6 p-4 sm:p-5" open={false}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
@@ -280,9 +279,64 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
         </div>
       </details>
 
-      <AdSlot slot="banner" className="mt-8" />
+      <AdSlot slot="banner" className="mt-6" />
+      {/* ------------------------------------------------ start: pinned so it's always on screen */}
+      <div className="sticky bottom-0 z-30 -mx-4 mt-6 border-t border-white/8 bg-ink-950/92 px-4 py-3 backdrop-blur safe-bottom">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
+          <p className="order-2 text-center text-sm text-mist sm:order-1 sm:text-left">
+            {isHost ? (
+              missing > 0 ? (
+                <>
+                  {t('Need {n} more player to start.', { n: missing })}{' '}
+                  <button className="font-semibold text-hay underline underline-offset-4" onClick={addBot}>
+                    {t('Add a bot')}
+                  </button>{' '}
+                  {t('or share the link above.')}
+                </>
+              ) : (
+                t('Everyone’s in? Deal whenever you’re ready.')
+              )
+            ) : (
+              t('You’re seated. {name} will start the game.', { name: hostName })
+            )}
+          </p>
+          {isHost ? (
+            <button className="btn btn-primary order-1 w-full !py-3.5 !text-lg sm:order-2 sm:w-auto sm:!px-8" disabled={missing > 0} onClick={start}>
+              <IconPlay size={16} /> {t('Deal the cards')}
+            </button>
+          ) : (
+            <span className="order-1 flex items-center gap-2 font-semibold text-mint sm:order-2">
+              <IconCheck size={16} /> {t('Ready')}
+            </span>
+          )}
+        </div>
+        {startError && <p className="mt-1 text-center text-sm text-bull">{startError}</p>}
+      </div>
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
+  );
+}
+
+function StepGuide({ steps }: { steps: { label: string; done: boolean }[] }) {
+  const current = steps.findIndex((s) => !s.done);
+  return (
+    <ol className="mb-3 grid grid-cols-3 gap-1.5 sm:gap-2" aria-label="steps">
+      {steps.map((st, i) => (
+        <li
+          key={i}
+          className={clsx(
+            'flex items-center gap-1.5 rounded-xl border px-2 py-1.5 text-[11px] font-semibold leading-tight sm:gap-2 sm:px-3 sm:py-2 sm:text-sm',
+            st.done ? 'border-mint/30 bg-mint/10 text-mint' : i === current ? 'border-hay/50 bg-hay/10 text-hay' : 'border-white/8 text-fog',
+          )}
+          aria-current={i === current ? 'step' : undefined}
+        >
+          <span className={clsx('grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-extrabold', st.done ? 'bg-mint text-ink-950' : i === current ? 'bg-hay text-ink-950' : 'bg-white/10')}>
+            {st.done ? <IconCheck size={11} strokeWidth={3} /> : i + 1}
+          </span>
+          <span className="min-w-0">{st.label}</span>
+        </li>
+      ))}
+    </ol>
   );
 }
 

@@ -139,11 +139,11 @@ export function Learn() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-3xl px-4 py-4 sm:py-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <div className="eyebrow">{t('Interactive tutorial')}</div>
-          <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight">{finished ? t('You’re ready.') : t(cur.title)}</h1>
+          <h1 className="mt-0.5 font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{finished ? t('You’re ready.') : t(cur.title)}</h1>
         </div>
         <div className="flex gap-1.5" aria-label={t('Step {n} of {total}', { n: Math.min(step + 1, STEPS.length), total: STEPS.length })}>
           {STEPS.map((_, i) => (
@@ -175,10 +175,10 @@ export function Learn() {
         </div>
       ) : (
         <>
-          <p className="mt-3 text-mist">{t(cur.prompt)}</p>
+          <p className="mt-2 text-sm text-mist sm:text-base">{t(cur.prompt)}</p>
 
           <LayoutGroup>
-            <div ref={boardRef} className="felt mt-5 rounded-[1.6rem] p-3 sm:p-4" style={{ '--card-w': 'clamp(38px, calc((100vw - 110px) / 7.4), 70px)' } as React.CSSProperties}>
+            <div ref={boardRef} className="felt mt-3 rounded-[1.6rem] p-2.5 sm:p-3" style={{ '--card-w': 'clamp(32px, min(calc((100vw - 110px) / 7.4), calc((100dvh - 420px) / 6.2)), 70px)' } as React.CSSProperties}>
               <div className="flex flex-col gap-[calc(var(--card-w)*0.09)]">
                 {rows.map((row, i) => (
                   <div
@@ -217,7 +217,7 @@ export function Learn() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-end justify-between gap-4">
+            <div className="mt-3 flex items-end justify-between gap-4">
               <div className="flex gap-2">
                 {hand.map((c) => (
                   <motion.button
@@ -228,7 +228,7 @@ export function Learn() {
                     className={clsx('rounded-[10px]', c.value === cur.play && !done && !awaitingRow && 'ring-[3px] ring-hay ring-offset-2 ring-offset-ink-950')}
                     aria-label={t('Card {v}', { v: c.value })}
                   >
-                    <GameCard card={c} width={64} className={clsx(c.value !== cur.play && 'opacity-60')} />
+                    <GameCard card={c} width="clamp(44px, calc((100dvh - 300px) / 6), 64px)" className={clsx(c.value !== cur.play && 'opacity-60')} />
                   </motion.button>
                 ))}
               </div>
@@ -244,10 +244,10 @@ export function Learn() {
             </div>
           </LayoutGroup>
 
-          <div className="mt-5 min-h-[4.5rem]">
+          <div className="mt-3 min-h-[3.5rem]">
             <AnimatePresence mode="wait">
               {done ? (
-                <motion.div key="done" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mint/30 bg-mint/10 p-4">
+                <motion.div key="done" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-mint/30 bg-mint/10 px-4 py-3">
                   <span className="flex items-start gap-2 text-sm text-white">
                     <IconCheck size={18} className="mt-0.5 shrink-0 text-mint" /> {done}
                   </span>
