@@ -12,7 +12,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.resolve(here, '../dist');
 const site = (process.env.VITE_SITE_URL || 'https://bullheadsonline.com').replace(/\/$/, '');
 const landings = JSON.parse(await readFile(path.resolve(here, '../src/seo/landings.json'), 'utf8'));
-const template = await readFile(path.join(dist, 'index.html'), 'utf8');
+// Source files are written against a placeholder origin; every built file gets the real one.
+const PLACEHOLDER = 'https://bullheadsonline.com';
+const withSite = (s) => s.replaceAll(PLACEHOLDER, site);
+const template = withSite(await readFile(path.join(dist, 'index.html'), 'utf8'));
+for (const file of ['robots.txt', 'sitemap.xml']) {
+  await writeFile(path.join(dist, file), withSite(await readFile(path.join(dist, file), 'utf8')));
+}
 // Untouched shell for client-only routes (/play/:code, /plus/success…), so they don't flash landing copy.
 await writeFile(path.join(dist, 'app.html'), template);
 

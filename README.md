@@ -2,7 +2,7 @@
 
 A free, ad-supported multiplayer version of the bullhead card game (2–10 players), with a one-time **Plus** upgrade. English UI, mobile-first, playable in the browser.
 
-Live at **bullheadsonline.com**. The game uses the classic 104-card rules known from 6 nimmt!®, but it is an independent product: never use AMIGO's names, logo or card art as branding. The brand lives in [`apps/web/src/brand.ts`](apps/web/src/brand.ts).
+Live at **bullheads.vercel.app**. The game uses the classic 104-card rules known from 6 nimmt!®, but it is an independent product: never use AMIGO's names, logo or card art as branding. The brand lives in [`apps/web/src/brand.ts`](apps/web/src/brand.ts).
 
 ## What's inside
 

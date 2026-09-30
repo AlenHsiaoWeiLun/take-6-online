@@ -1,3 +1,4 @@
+import { SupportLink } from '../components/SupportLink';
 import { BRAND } from '../brand';
 
 /**
@@ -21,9 +22,9 @@ export function Privacy() {
         You can opt out of personalised advertising at <a href="https://adssettings.google.com">adssettings.google.com</a>. Plus members are never shown ads.
       </p>
       <h2>Your choices</h2>
-      <p>You can delete your account and statistics at any time by emailing <a href={`mailto:${BRAND.supportEmail}`}>{BRAND.supportEmail}</a>.</p>
+      <p>You can delete your account and statistics at any time by emailing <SupportLink />.</p>
       <h2>Contact</h2>
-      <p>{BRAND.company} · <a href={`mailto:${BRAND.supportEmail}`}>{BRAND.supportEmail}</a></p>
+      <p>{BRAND.company} · <SupportLink /></p>
     </Doc>
   );
 }
@@ -42,7 +43,7 @@ export function Terms() {
       <h2>Availability</h2>
       <p>The game is provided “as is”. We work to keep it online but can’t guarantee uninterrupted service.</p>
       <h2>Contact</h2>
-      <p><a href={`mailto:${BRAND.supportEmail}`}>{BRAND.supportEmail}</a></p>
+      <p><SupportLink /></p>
     </Doc>
   );
 }

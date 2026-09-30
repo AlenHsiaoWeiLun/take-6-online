@@ -4,7 +4,7 @@ export const BRAND = {
   short: 'Bullheads',
   plus: 'Bullheads Plus',
   tagline: 'Don\u2019t take the sixth card.',
-  domain: 'bullheadsonline.com',
-  supportEmail: 'hello@bullheadsonline.com',
+  /** Set VITE_SUPPORT_EMAIL once a real inbox exists; until then everything points at the contact form. */
+  supportEmail: (import.meta.env.VITE_SUPPORT_EMAIL as string | undefined)?.trim() || '',
   company: 'Bullheads Online',
 };

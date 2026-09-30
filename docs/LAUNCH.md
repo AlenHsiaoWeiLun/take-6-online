@@ -14,7 +14,7 @@ The live stack is **Vercel** (website) + **InsForge** (Postgres, sign-in, game s
 
 | Piece | Where |
 |---|---|
-| Website | `https://bullheads-online.vercel.app` (Vercel project `bullheads-online`) |
+| Website | `https://bullheads.vercel.app` (Vercel project `bullheads-online`; the old `bullheads-online.vercel.app` 308-redirects here) |
 | Game server | InsForge Compute service `bullheads-server` — deploy with `scripts/deploy-server-insforge.sh` |
 | Database | InsForge project `bullheads-online` (`npx @insforge/cli db connection-string`) |
 | Sign-in | InsForge auth: Google + 6-digit email code. The server verifies tokens via `INSFORGE_URL/.well-known/jwks.json` |

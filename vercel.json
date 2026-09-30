@@ -4,6 +4,19 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build -w @take6/web",
   "outputDirectory": "apps/web/dist",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "bullheads-online.vercel.app"
+        }
+      ],
+      "destination": "https://bullheads.vercel.app/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/rules",

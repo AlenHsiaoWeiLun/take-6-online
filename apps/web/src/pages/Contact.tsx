@@ -46,28 +46,30 @@ export function Contact() {
       <h1 className="mt-1 font-display text-4xl font-extrabold tracking-tight">{t('Say moo 👋')}</h1>
       <p className="mt-3 text-fog">{t('Found a bug, have an idea, or need help with Plus? We read every message and usually reply within two days.')}</p>
 
-      <div className="panel mt-6 flex flex-wrap items-center justify-between gap-3 p-4">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-fog">{t('Email')}</div>
-          <a href={`mailto:${BRAND.supportEmail}`} className="font-display text-lg font-bold text-white underline-offset-4 hover:underline">
-            {BRAND.supportEmail}
-          </a>
+      {BRAND.supportEmail && (
+        <div className="panel mt-6 flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-fog">{t('Email')}</div>
+            <a href={`mailto:${BRAND.supportEmail}`} className="font-display text-lg font-bold text-white underline-offset-4 hover:underline">
+              {BRAND.supportEmail}
+            </a>
+          </div>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(BRAND.supportEmail);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              } catch {
+                /* clipboard blocked */
+              }
+            }}
+          >
+            {copied ? <IconCheck size={15} /> : <IconCopy size={15} />} {copied ? t('Copied') : t('Copy')}
+          </button>
         </div>
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(BRAND.supportEmail);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
-            } catch {
-              /* clipboard blocked */
-            }
-          }}
-        >
-          {copied ? <IconCheck size={15} /> : <IconCopy size={15} />} {copied ? t('Copied') : t('Copy')}
-        </button>
-      </div>
+      )}
 
       {state === 'sent' ? (
         <div className="panel mt-6 p-8 text-center">
