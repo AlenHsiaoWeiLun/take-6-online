@@ -1,53 +1,15 @@
 import type { CSSProperties } from 'react';
 import { CHARACTERS, makeCard } from '@take6/shared';
 import { Art } from './Art';
+import { HeroScene } from './HeroScene';
 import { BullPortrait, characterById } from './BullPortrait';
 import { GameCard } from '../components/GameCard';
 import { LogoMark } from './Logo';
 import { BRAND } from '../brand';
 
-/** Landing hero: a fan of cards with Bruno charging through the middle. */
+/** Landing hero: the sixth-card moment on loop (see HeroScene). */
 export function HeroArt() {
-  const fan = [104, 11, 55, 6, 42];
-  return (
-    <Art
-      id="illustration-hero"
-      alt="A cartoon bull bursting through a fan of numbered cards"
-      className="mx-auto w-full max-w-[520px] drop-shadow-2xl"
-      fallback={
-        <div className="relative mx-auto aspect-square w-full max-w-[460px]" aria-hidden="true">
-          <div className="absolute inset-[12%] rounded-full bg-bull/25 blur-3xl" />
-          <div className="absolute inset-[22%] rounded-full bg-hay/15 blur-2xl" />
-          {/* Hand fan: every card pivots around a point well below the fan. */}
-          <div className="absolute left-1/2 top-[14%]">
-            {fan.map((v, i) => (
-              <div
-                key={v}
-                className="absolute left-0 top-0"
-                style={{ transform: `translateX(-50%) rotate(${(i - 2) * 14}deg)`, transformOrigin: '50% 216%' }}
-              >
-                <GameCard card={makeCard(v)} width="clamp(70px, 18vw, 96px)" className="shadow-2xl" />
-              </div>
-            ))}
-          </div>
-          <div className="absolute bottom-[2%] left-1/2 w-[40%] -translate-x-1/2 drop-shadow-[0_24px_30px_rgba(0,0,0,.55)]">
-            <BullPortrait character={characterById('bruno')} />
-          </div>
-          <FloatingCard value={7} className="left-[2%] top-[14%]" r={-18} delay={0} />
-          <FloatingCard value={66} className="right-[3%] top-[8%]" r={14} delay={1.2} />
-          <FloatingCard value={22} className="bottom-[20%] right-[0%]" r={22} delay={2.1} />
-        </div>
-      }
-    />
-  );
-}
-
-function FloatingCard({ value, className, r, delay }: { value: number; className: string; r: number; delay: number }) {
-  return (
-    <div className={`absolute animate-float ${className}`} style={{ '--r': `${r}deg`, animationDelay: `${delay}s` } as CSSProperties}>
-      <GameCard card={makeCard(value)} width="clamp(42px, 10vw, 60px)" className="opacity-90" />
-    </div>
-  );
+  return <HeroScene />;
 }
 
 /** Product shot for Plus: a 3D deck box built in CSS. */

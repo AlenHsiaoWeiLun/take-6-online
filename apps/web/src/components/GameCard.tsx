@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import type { Card } from '@take6/shared';
 import { Bullhead } from '../art/icons';
 import { artUrl } from '../art/Art';
+import { BullMark } from '../art/BullMark';
 
 const cardbackArt = artUrl('texture-cardback');
 
@@ -44,7 +45,7 @@ export function CardBack({ theme = 'classic', width, className }: { theme?: stri
       {theme === 'classic' && cardbackArt ? (
         <img src={cardbackArt} alt="" className="size-full object-cover" draggable={false} />
       ) : (
-        <Bullhead style={{ width: '42%', height: '42%', color: 'rgb(255 247 234 / .9)' }} />
+        <BullMark size="58%" palette={theme === 'midnight' || theme === 'gilded' ? 'ink' : 'mono'} />
       )}
     </div>
   );

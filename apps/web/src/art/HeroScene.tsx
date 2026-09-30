@@ -1,0 +1,197 @@
+import { useEffect, useState, type CSSProperties } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { makeCard, rowPenalty } from '@take6/shared';
+import { GameCard } from '../components/GameCard';
+import { Bullhead } from './icons';
+import { BullMark, Starburst } from './BullMark';
+import { useT } from '../i18n';
+
+/**
+ * The landing hero is the game's best moment on loop: a row already holds five cards,
+ * a 67 drifts toward the sixth slot, lands, and the whole row blows up in someone's face.
+ * It teaches the core rule and shows the payoff before anyone reads a word.
+ */
+type Phase = 'idle' | 'approach' | 'land' | 'boom' | 'reset';
+const TIMELINE: [Phase, number][] = [
+  ['idle', 700],
+  ['approach', 1700],
+  ['land', 420],
+  ['boom', 2300],
+  ['reset', 700],
+];
+
+const ROWS = [[3, 18], [7, 11, 42, 55, 66], [24, 31, 38], [80, 91, 99]].map((r) => r.map(makeCard));
+const DANGER = 1;
+const INCOMING = makeCard(67);
+const PENALTY = rowPenalty(ROWS[DANGER]);
+
+export function HeroScene() {
+  const t = useT();
+  const [phase, setPhase] = useState<Phase>('idle');
+
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setPhase('approach');
+      return;
+    }
+    let i = 0;
+    let timer: number;
+    const tick = () => {
+      i = (i + 1) % TIMELINE.length;
+      setPhase(TIMELINE[i][0]);
+      timer = window.setTimeout(tick, TIMELINE[i][1]);
+    };
+    timer = window.setTimeout(tick, TIMELINE[0][1]);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const tense = phase === 'approach' || phase === 'land';
+  const exploded = phase === 'boom';
+
+  return (
+    <div
+      className="relative mx-auto w-full max-w-[500px] select-none"
+      style={{ '--hw': 'clamp(34px, 10.5vw, 56px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
+      aria-label={t('A sixth card lands on a full row and the player takes all five cards')}
+      role="img"
+    >
+      <div className="absolute inset-[10%] -z-10 rounded-full bg-bull/25 blur-3xl" />
+
+      <div className="felt relative rounded-[1.6rem] p-3 sm:p-4">
+        <div className="flex flex-col gap-[var(--g)]">
+          {ROWS.map((row, r) => {
+            const danger = r === DANGER;
+            return (
+              <motion.div
+                key={r}
+                className="relative flex items-center gap-[var(--g)]"
+                animate={danger && phase === 'land' ? { x: [0, -6, 6, -4, 3, 0] } : danger && tense ? { x: [0, -1.5, 1.5, 0] } : { x: 0 }}
+                transition={danger && tense ? { duration: phase === 'land' ? 0.4 : 0.22, repeat: phase === 'land' ? 0 : Infinity } : { duration: 0.2 }}
+              >
+                <div
+                  className={
+                    'flex w-[calc(var(--hw)*0.72)] shrink-0 flex-col items-center justify-center rounded-lg py-1 transition-colors ' +
+                    (danger && (tense || exploded) ? 'bg-bull text-white' : 'bg-black/25 text-mist')
+                  }
+                >
+                  <Bullhead size={12} className={danger && (tense || exploded) ? 'text-white' : 'text-fog'} />
+                  <span className="font-display text-xs font-bold tabular">{danger ? PENALTY : rowPenalty(row)}</span>
+                </div>
+
+                {Array.from({ length: 6 }, (_, i) => {
+                  const card = row[i];
+                  if (card) {
+                    const flying = danger && exploded;
+                    return (
+                      <motion.div
+                        key={card.value}
+                        className="relative"
+                        animate={
+                          flying
+                            ? { x: 140 + i * 18, y: 150 + i * 10, rotate: 30 + i * 22, scale: 0.35, opacity: 0 }
+                            : { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 }
+                        }
+                        transition={flying ? { duration: 0.75, delay: 0.25 + i * 0.05, ease: [0.5, 0, 0.8, 0.4] } : { duration: 0.35, delay: phase === 'idle' ? i * 0.04 : 0 }}
+                      >
+                        <GameCard card={card} width="var(--hw)" />
+                      </motion.div>
+                    );
+                  }
+                  const sixth = i === 5;
+                  return (
+                    <div
+                      key={`slot-${i}`}
+                      className={
+                        'relative shrink-0 rounded-[calc(var(--hw)*0.12)] border-[1.5px] border-dashed ' +
+                        (sixth && danger ? 'border-bull/70 bg-bull/10' : 'border-white/10')
+                      }
+                      style={{ width: 'var(--hw)', height: 'calc(var(--hw) * 1.4)' }}
+                    >
+                      {sixth && danger && (
+                        <motion.div
+                          className="absolute inset-0 z-10"
+                          initial={false}
+                          animate={
+                            phase === 'idle'
+                              ? { x: 110, y: -150, rotate: 26, opacity: 0, scale: 1.1 }
+                              : phase === 'approach'
+                                ? { x: [70, 36], y: [-110, -46], rotate: [20, 10], opacity: 1, scale: 1.08 }
+                                : phase === 'land'
+                                  ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 }
+                                  : phase === 'boom'
+                                    ? { x: '-550%', y: 0, rotate: 0, opacity: 1, scale: 1 }
+                                    : { x: '-550%', y: 0, opacity: 0, scale: 0.9 }
+                          }
+                          transition={
+                            phase === 'approach'
+                              ? { duration: 1.6, ease: 'easeInOut' }
+                              : phase === 'land'
+                                ? { type: 'spring', stiffness: 700, damping: 18 }
+                                : phase === 'boom'
+                                  ? { delay: 0.6, type: 'spring', stiffness: 260, damping: 26 }
+                                  : { duration: 0.4 }
+                          }
+                        >
+                          <GameCard card={INCOMING} width="var(--hw)" style={{ boxShadow: '0 0 0 3px #f5b942, 0 16px 30px -8px rgb(0 0 0 / .6)' }} />
+                        </motion.div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {danger && (
+                  <AnimatePresence>
+                    {tense && (
+                      <motion.span
+                        key="wait"
+                        initial={{ opacity: 0, scale: 0.4, rotate: -14 }}
+                        animate={{ opacity: 1, scale: 1, rotate: -6 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ type: 'spring', stiffness: 600, damping: 16, delay: phase === 'approach' ? 0.5 : 0 }}
+                        className="absolute -top-[calc(var(--hw)*0.75)] right-[calc(var(--hw)*0.4)] z-20 whitespace-nowrap rounded-lg bg-bull px-2.5 py-1 font-display text-[11px] font-extrabold text-white shadow-[0_4px_0_#8e1f27] sm:text-sm"
+                      >
+                        {t('Wait. This one’s the sixth.')}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* the payoff: penalty explosion + the smug bull */}
+      <AnimatePresence>
+        {exploded && (
+          <>
+            <motion.div
+              key="burst"
+              className="pointer-events-none absolute -right-3 top-[26%] z-20 grid place-items-center sm:-right-8"
+              initial={{ scale: 0, rotate: -40 }}
+              animate={{ scale: [0, 1.25, 1], rotate: 0 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ delay: 0.55, duration: 0.5, ease: 'easeOut' }}
+            >
+              <Starburst size="clamp(110px, 30vw, 150px)" color="#E5484D" />
+              <span className="absolute flex items-center gap-1 font-display text-3xl font-extrabold text-white drop-shadow sm:text-4xl">
+                +{PENALTY}
+                <Bullhead size={22} />
+              </span>
+            </motion.div>
+            <motion.div
+              key="bull"
+              className="pointer-events-none absolute bottom-[3%] right-[20%] z-20"
+              initial={{ y: 80, rotate: -20, opacity: 0 }}
+              animate={{ y: 0, rotate: [-20, 8, -3, 0], opacity: 1 }}
+              exit={{ y: 60, opacity: 0 }}
+              transition={{ delay: 0.9, type: 'spring', stiffness: 420, damping: 14 }}
+            >
+              <BullMark size="clamp(70px, 18vw, 96px)" mood="smug" />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

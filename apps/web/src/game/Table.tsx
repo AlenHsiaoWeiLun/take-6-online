@@ -249,7 +249,7 @@ function useTableFeedback(
       seenEmotes.current.add(bubble.key);
       const def = EMOTES.find((x) => x.id === bubble.emote);
       const chip = anchors.players.get(bubble.playerId)?.getBoundingClientRect();
-      if (def?.emoji && chip) fx.emoji(chip, def.emoji);
+      if (def?.emoji && chip) fx.emoji(chip, def.emoji, artUrl(`sticker-${def.id}`));
       sound.play('pop');
     }
   }, [emotes]);
@@ -605,13 +605,13 @@ function StatusLine({
         ? t('You place {v} on row {r}', { v: e.card.value, r: e.row + 1 })
         : t('{name} places {v} on row {r}', { name: nameOf(e.playerId), v: e.card.value, r: e.row + 1 });
     if (e.type === 'danger') {
-      text = mine(e.playerId) ? t('Uh-oh… your {v} is the sixth card!', { v: e.card.value }) : t('Uh-oh… {name}’s {v} is the sixth card!', { name: nameOf(e.playerId), v: e.card.value });
+      text = mine(e.playerId) ? t('Wait. Your {v} is the sixth card.', { v: e.card.value }) : t('Wait. {name}’s {v} is the sixth card.', { name: nameOf(e.playerId), v: e.card.value });
       tone = 'alert';
     }
     if (e.type === 'take') {
       text = mine(e.playerId)
-        ? t('You take row {r} · +{p} bullheads', { r: e.row + 1, p: e.penalty })
-        : t('{name} takes row {r} · +{p} bullheads', { name: nameOf(e.playerId), r: e.row + 1, p: e.penalty });
+        ? t('You swallow row {r} · +{p} bullheads', { r: e.row + 1, p: e.penalty })
+        : t('{name} swallows row {r} · +{p} bullheads', { name: nameOf(e.playerId), r: e.row + 1, p: e.penalty });
       tone = 'alert';
     }
   }
@@ -896,7 +896,7 @@ function ReactionButton({ onReact }: { onReact: (id: string) => void }) {
                   onClick={() => onReact(e.id)}
                   aria-label={t(e.label)}
                 >
-                  {e.emoji}
+                  {artUrl(`sticker-${e.id}`) ? <img src={artUrl(`sticker-${e.id}`)!} alt="" className="size-10 object-contain" draggable={false} /> : e.emoji}
                 </motion.button>
               ))}
             </div>

@@ -200,3 +200,10 @@ export const IconSmile = (p: IconProps) => (
     <path d="M8.5 14.5c.9 1.2 2.1 1.8 3.5 1.8s2.6-.6 3.5-1.8M9 9.5h.01M15 9.5h.01" />
   </Base>
 );
+export const IconSettings = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+    <circle cx="16" cy="7" r="2.2" />
+    <circle cx="10" cy="17" r="2.2" />
+  </Base>
+);

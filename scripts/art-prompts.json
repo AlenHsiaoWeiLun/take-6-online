@@ -1,118 +1,219 @@
 {
-  "style": "Premium casual-game art in a soft 3D clay style, rounded chunky forms, gentle rim light, subtle film grain, warm studio lighting. Palette: cream paper (#FFF7EA), bull red (#E5484D), hay gold (#F5B942), ink navy (#0B0D12), teal felt (#14352F). Clean, minimal, Dribbble-quality, high detail. Absolutely no text, letters, numbers, watermarks or logos unless the brief asks for them.",
+  "style": "Art direction for \"Bullheads\", a fast, cheeky, chaotic party card game where friends sabotage each other and swallow rows of penalty cards. Bold FLAT GEOMETRIC vector illustration: chunky confident shapes, thick clean silhouettes, hard edges, minimal soft shading, a very slight offset-print misregistration and fine paper grain. Limited palette: bull red #E5484D, deep red #B8323A, cream #FFF1D6, ink black #14161D, hay gold #F5B942, plus at most one accent colour per image. Bulls are drawn as geometric heads with OVERSIZED sweeping horns, a gold nose ring and big simple eyes with very expressive brows. Attitude: smug, mischievous, a little obnoxious — never babyish, never a cute app mascot. NOT 3D, NOT clay, NOT glossy, NOT photoreal, no gradients-heavy app-icon look. Playing cards, when shown, are cream with a coloured top band and small bull-head pips. No text, letters, numbers, watermarks or logos unless the brief explicitly asks for them.",
   "assets": [
     {
-      "id": "logo-mark",
-      "category": "logo",
+      "id": "character-bruno",
+      "category": "character",
+      "priority": "must",
       "size": "1024x1024",
-      "transparent": true,
-      "width": 256,
-      "prompt": "App icon mark: a cream playing card tilted slightly right, overlapping a red card behind it, with a bold friendly red bull head emblem in the centre of the front card. Flat-ish vector look with soft depth, centred, isolated on a transparent background, readable at 32px."
+      "width": 384,
+      "where": "Player avatar (circle-cropped) in lobby, table, results, leaderboard",
+      "prompt": "Avatar portrait of BRUNO, a cocky young bull: rust-red head, huge cream horns, gold nose ring, one eyebrow raised in a smug grin. Front-facing geometric bull head filling about 70% of the frame, perfectly centred, nothing important in the corners (it will be cropped to a circle). Solid flat deep-navy (#1F2A44) background."
     },
     {
-      "id": "illustration-hero",
-      "category": "illustration",
+      "id": "character-daisy",
+      "category": "character",
+      "priority": "must",
       "size": "1024x1024",
-      "transparent": true,
-      "width": 1040,
-      "prompt": "Hero illustration: a charming cartoon bull with a red-brown hide, big white horns and a gold nose ring bursting forward through a fan of oversized cream playing cards with coloured top bands (lavender, sky blue, amber, coral red, violet) and small bull-head pips. Playful motion, cards flying, a few loose cards floating. Isolated on a transparent background."
+      "width": 384,
+      "where": "Player avatar",
+      "prompt": "Avatar portrait of DAISY, a sweet-looking cow who is secretly ruthless: cream-white head, short gold horns, pink snout, a white daisy tucked behind one ear, innocent half-smile with narrowed calculating eyes. Front-facing geometric head filling about 70% of the frame, centred, circle-crop safe. Solid flat hay-gold (#F5B942) background."
     },
     {
-      "id": "illustration-empty",
-      "category": "illustration",
+      "id": "character-tank",
+      "category": "character",
+      "priority": "must",
       "size": "1024x1024",
-      "transparent": true,
-      "width": 640,
-      "prompt": "A sleepy cartoon cow lying next to an empty green felt card table with four neat empty card outlines, waiting for players. Cosy, gentle, isolated on a transparent background."
+      "width": 384,
+      "where": "Player avatar",
+      "prompt": "Avatar portrait of TANK, a huge dark-brown bull who always ends up swallowing the row: thick horns, red bandana with white dots tied across the forehead, heavy brows, grumpy tough-guy frown. Front-facing geometric head filling about 70% of the frame, centred, circle-crop safe. Solid flat bull-red (#E5484D) background."
     },
-    { "id": "character-bruno", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Bruno: a confident young bull with a rust-red hide, cream horns, peach snout and a small gold nose ring, determined grin. Centered head and shoulders on a plain deep navy (#1F2A44) circular-friendly background." },
-    { "id": "character-daisy", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Daisy: a sweet cream-white cow with pink snout, short golden horns and a white daisy tucked behind one ear, clever smile. Centered head and shoulders on a plain warm gold (#F5B942) background." },
-    { "id": "character-tank", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Tank: a big dark-brown bull with a red bandana with white dots across his forehead, broad horns, friendly tough-guy look. Centered head and shoulders on a plain coral red (#E5484D) background." },
-    { "id": "character-mocha", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Mocha: a calm milk-chocolate brown bull wearing a cosy teal knitted scarf, relaxed half-smile. Centered head and shoulders on a plain muted teal (#4F8A8B) background." },
-    { "id": "character-ziggy", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Ziggy: a mischievous purple-furred bull with pale gold horns and a small gold star sticker on one cheek, cheeky wink. Centered head and shoulders on a plain gold (#F5B942) background." },
-    { "id": "character-nova", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Nova: a slate-blue bull with round white-rimmed glasses and a studious, focused expression. Centered head and shoulders on a plain sky blue (#5AC8FA) background." },
-    { "id": "character-sage", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Sage: a gentle sage-green cow with soft cream horns and wise, slightly amused eyes. Centered head and shoulders on a plain coral red (#C8553D) background." },
-    { "id": "character-bolt", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Character portrait bust, front facing, of Bolt: an energetic golden-yellow bull wearing chunky red headphones, excited open-mouth grin. Centered head and shoulders on a plain deep navy (#1F2A44) background." },
-    { "id": "character-aurum", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Premium character portrait bust, front facing, of Aurum: a regal bull made of polished gold with a small jewelled crown between his horns, subtle sparkle highlights, dignified smile. Centered head and shoulders on a plain dark bronze (#8A5A12) background." },
-    { "id": "character-nebula", "category": "character", "size": "1024x1024", "width": 384, "prompt": "Premium character portrait bust, front facing, of Nebula: a cosmic bull with deep indigo hide speckled with tiny stars, lilac horns and a glowing cyan-to-pink sci-fi visor over the eyes. Centered head and shoulders on a plain hot pink (#FF7AC6) background." },
     {
-      "id": "background-home",
-      "category": "background",
+      "id": "character-mocha",
+      "category": "character",
+      "priority": "must",
+      "size": "1024x1024",
+      "width": 384,
+      "where": "Player avatar",
+      "prompt": "Avatar portrait of MOCHA, an unbothered milk-chocolate bull: sleepy heavy-lidded eyes, teal knitted scarf, tiny smirk — calm even while buried in penalty cards. Front-facing geometric head filling about 70% of the frame, centred, circle-crop safe. Solid flat muted teal (#4F8A8B) background."
+    },
+    {
+      "id": "character-ziggy",
+      "category": "character",
+      "priority": "must",
+      "size": "1024x1024",
+      "width": 384,
+      "where": "Player avatar",
+      "prompt": "Avatar portrait of ZIGGY, a chaotic purple bull who plays the 55 just to watch: violet head, pale-gold horns, gold star sticker on one cheek, cheeky wink with tongue poking out. Front-facing geometric head filling about 70% of the frame, centred, circle-crop safe. Solid flat hay-gold (#F5B942) background."
+    },
+    {
+      "id": "character-nova",
+      "category": "character",
+      "priority": "must",
+      "size": "1024x1024",
+      "width": 384,
+      "where": "Player avatar",
+      "prompt": "Avatar portrait of NOVA, a card-counting slate-blue bull: round white-rimmed glasses, one eyebrow raised, knowing smug look as if she already calculated your doom. Front-facing geometric head filling about 70% of the frame, centred, circle-crop safe. Solid flat sky-blue (#5AC8FA) background."
+    },
+    {
+      "id": "character-sage",
+      "category": "character",
+      "priority": "must",
+      "size": "1024x1024",
+      "width": 384,
+      "where": "Player avatar",
+      "prompt": "Avatar portrait of SAGE, an old wise sage-green cow with a sly streak: cream horns, drooping eyelids, faint mischievous smile, a small sprig of grass in her mouth. Front-facing geometric head filling about 70% of the frame, centred, circle-crop safe. Solid flat deep-red (#B8323A) background."
+    },
+    {
+      "id": "character-bolt",
+      "category": "character",
+      "priority": "must",
+      "size": "1024x1024",
+      "width": 384,
+      "where": "Player avatar",
+      "prompt": "Avatar portrait of BOLT, a hyperactive golden-yellow bull who plays too fast: chunky red headphones, wide-open excited grin, eyes a little too big, tiny lightning-bolt shapes around him. Front-facing geometric head filling about 70% of the frame, centred, circle-crop safe. Solid flat ink-black (#14161D) background."
+    },
+    {
+      "id": "character-aurum",
+      "category": "character",
+      "priority": "must",
+      "size": "1024x1024",
+      "width": 384,
+      "where": "Premium (Plus) avatar",
+      "prompt": "Premium avatar portrait of AURUM, a regal bull made of flat gold shapes: small jewelled crown between the horns, gold nose ring, chin raised, unbearably smug expression. Keep it flat and geometric (no metallic 3D rendering) — suggest gold with 2–3 flat tones. Front-facing, head filling about 70% of the frame, centred, circle-crop safe. Solid flat dark-bronze (#5A3A0C) background."
+    },
+    {
+      "id": "character-nebula",
+      "category": "character",
+      "priority": "must",
+      "size": "1024x1024",
+      "width": 384,
+      "where": "Premium (Plus) avatar",
+      "prompt": "Premium avatar portrait of NEBULA, a cosmic bull: deep indigo head speckled with tiny flat stars, lilac horns, a glowing cyan-to-pink visor band over the eyes, confident smirk. Flat geometric shapes, no 3D. Front-facing, head filling about 70% of the frame, centred, circle-crop safe. Solid flat hot-pink (#FF7AC6) background."
+    },
+    {
+      "id": "og-cover",
+      "category": "marketing",
+      "priority": "must",
       "size": "1536x1024",
-      "width": 1920,
-      "prompt": "Wide atmospheric background: rolling pasture hills at dusk under a deep ink-navy sky, soft warm glow on the horizon, a tiny red barn far away, scattered playing cards drifting like leaves. Dark, low contrast, lots of empty space at the top-left for text, subtle and moody."
+      "width": 1536,
+      "where": "Link preview on LINE / Facebook / X / Discord (headline text is added by code on the left)",
+      "prompt": "Wide banner, ink-black (#0B0D12) background with warm red and gold glow on the right. RIGHT HALF: a single row of five cream playing cards lined up on a dark teal table, and a sixth card slamming down at the end of the row, cards exploding outward, a big red starburst, a smug geometric bull head with huge horns popping up beside the chaos. LEFT 45% must stay EMPTY dark space for a headline. Dynamic, loud, party-game energy."
     },
     {
       "id": "texture-felt",
       "category": "texture",
+      "priority": "must",
       "size": "1024x1024",
       "width": 1024,
-      "prompt": "Seamless tileable top-down texture of deep teal-green (#14352F) casino card-table felt, fine woven fibres, very subtle variation, evenly lit, no vignette, no objects."
+      "where": "Game table surface (tiled)",
+      "prompt": "SEAMLESS TILEABLE top-down texture of deep teal-green (#14352F) card-table felt with fine woven fibres and a very faint repeating pattern of tiny geometric bull heads in a slightly darker tone. Even lighting, no vignette, no objects, low contrast so cards stay readable on top."
     },
     {
       "id": "texture-cardback",
       "category": "texture",
+      "priority": "must",
       "size": "1024x1536",
       "width": 400,
-      "prompt": "Playing card back design, portrait, bull red (#E5484D) with a thin cream border, an elegant symmetrical pattern of tiny bull heads and diamonds, a cream bull-head medallion in the centre. Flat front-on view filling the frame, no perspective."
-    },
-    {
-      "id": "render-card-stack",
-      "category": "3d",
-      "size": "1024x1024",
-      "transparent": true,
-      "width": 640,
-      "prompt": "Glossy 3D render of a neat stack of cream playing cards with colourful top bands, the top card lifting off with a small red bull head pip, soft shadow, isolated on a transparent background."
-    },
-    {
-      "id": "render-trophy",
-      "category": "3d",
-      "size": "1024x1024",
-      "transparent": true,
-      "width": 512,
-      "prompt": "Glossy 3D render of a golden trophy cup shaped like a bull head with big horns as handles, on a small navy plinth, warm highlights, isolated on a transparent background."
+      "where": "Back of every face-down card (classic style)",
+      "prompt": "Playing-card back design, portrait, filling the entire frame edge to edge, front-on and perfectly flat (no perspective, no shadow, no table). Bull red (#E5484D) field with a thin cream border, a tight symmetrical repeating pattern of tiny geometric bull heads and diamonds, and one bold cream geometric bull-head medallion (huge horns, nose ring) in the centre. Must read clearly when shown very small."
     },
     {
       "id": "product-plus",
       "category": "product",
+      "priority": "must",
       "size": "1024x1024",
       "transparent": true,
       "width": 840,
-      "prompt": "Premium product shot of a collector playing-card deck box in matte black with gold foil edges and a gold bull-head emblem on the front, the lid slightly open with three fanned cards peeking out (one ivory with gold edges, one ink black with neon trim, one soft green). Three-quarter view, studio lighting, gentle reflection, isolated on a transparent background."
+      "where": "Plus store page hero",
+      "prompt": "Product shot of a premium collector card-deck box in matte ink black with gold foil edges and a gold geometric bull-head emblem on the front, lid half open, three cards fanned out of it (one ivory with gold edges, one black with neon edges, one soft green). Three-quarter view, bold flat illustration with crisp highlights (not photoreal). TRANSPARENT background, soft contact shadow only."
+    },
+    {
+      "id": "render-trophy",
+      "category": "illustration",
+      "priority": "must",
+      "size": "1024x1024",
+      "transparent": true,
+      "width": 512,
+      "where": "Leaderboard header",
+      "prompt": "A trophy cup whose handles are a pair of huge sweeping bull horns, gold with flat geometric shading, a small gold nose ring hanging from the front, on a short ink-black plinth. Centred, TRANSPARENT background."
+    },
+    {
+      "id": "illustration-empty",
+      "category": "illustration",
+      "priority": "must",
+      "size": "1024x1024",
+      "transparent": true,
+      "width": 640,
+      "where": "Empty leaderboard / waiting states",
+      "prompt": "A bored geometric bull sitting alone at an empty dark-teal card table with four empty card outlines, tapping a single card on the table, waiting for friends to show up. Slightly impatient expression. TRANSPARENT background, subject centred."
+    },
+    {
+      "id": "illustration-win",
+      "category": "illustration",
+      "priority": "must",
+      "size": "1024x1024",
+      "transparent": true,
+      "width": 560,
+      "where": "Results screen when YOU win",
+      "prompt": "Victory sticker: a smug geometric bull head wearing a small crown, sunglasses pushed up on the horns, surrounded by a burst of cream cards and gold confetti shapes, pure \"I told you so\" energy. Sticker style with a thick white outline around the whole shape. TRANSPARENT background."
+    },
+    {
+      "id": "illustration-lose",
+      "category": "illustration",
+      "priority": "must",
+      "size": "1024x1024",
+      "transparent": true,
+      "width": 560,
+      "where": "Results screen when you finish LAST",
+      "prompt": "Defeat sticker: a geometric bull head half-buried under an avalanche of cream penalty cards covered in little bull-head pips, dizzy spiral eyes, one horn sticking out, a tiny white flag. Funny, not sad. Sticker style with a thick white outline around the whole shape. TRANSPARENT background."
+    },
+    {
+      "id": "background-home",
+      "category": "background",
+      "priority": "optional",
+      "size": "1536x1024",
+      "width": 1920,
+      "where": "Very faint backdrop behind the whole site",
+      "prompt": "Wide, very dark ink-black background with a subtle chaotic pattern of scattered tilted cream playing cards and small geometric bull heads, heavily darkened (only 10–15% visible), plus soft red and gold light blooms in the corners. Lots of calm empty space in the centre and top-left for text. Must stay subtle; it sits behind UI."
     },
     {
       "id": "product-theme-midnight",
       "category": "product",
+      "priority": "optional",
       "size": "1024x1024",
       "transparent": true,
       "width": 480,
-      "prompt": "Three fanned playing cards in an ink-black 'Midnight' style with glowing neon coloured edges and neon bull-head pips, product shot, isolated on a transparent background."
+      "where": "Plus page: Midnight card style preview",
+      "prompt": "Three fanned playing cards in a 'Midnight' style: ink-black faces with glowing neon-coloured top bands (violet, cyan, pink) and neon bull-head pips, no numbers. Flat geometric illustration, TRANSPARENT background."
     },
     {
       "id": "product-theme-gilded",
       "category": "product",
+      "priority": "optional",
       "size": "1024x1024",
       "transparent": true,
       "width": 480,
-      "prompt": "Three fanned playing cards in an ivory 'Gilded' style with gold foil borders and gold bull-head pips, luxurious, product shot, isolated on a transparent background."
+      "where": "Plus page: Gilded card style preview",
+      "prompt": "Three fanned playing cards in a 'Gilded' style: ivory faces with gold foil borders, dark bands and gold bull-head pips, no numbers. Flat geometric illustration with crisp flat highlights, TRANSPARENT background."
     },
     {
       "id": "product-theme-meadow",
       "category": "product",
+      "priority": "optional",
       "size": "1024x1024",
       "transparent": true,
       "width": 480,
-      "prompt": "Three fanned playing cards in a soft green 'Meadow' style with hand-drawn grass pattern and green bull-head pips, fresh, product shot, isolated on a transparent background."
+      "where": "Plus page: Meadow card style preview",
+      "prompt": "Three fanned playing cards in a 'Meadow' style: soft green faces with a hand-drawn grass pattern, muted colour bands and green bull-head pips, no numbers. Flat geometric illustration, TRANSPARENT background."
     },
-    { "id": "icon-sticker-friends", "category": "icon", "size": "1024x1024", "transparent": true, "width": 160, "prompt": "Single 3D sticker icon: two small cartoon bull heads side by side, one red one cream, cheerful. Chunky, glossy, isolated on a transparent background, centred with padding." },
-    { "id": "icon-sticker-bots", "category": "icon", "size": "1024x1024", "transparent": true, "width": 160, "prompt": "Single 3D sticker icon: a cute robot bull head with a metal visor and small antenna, glossy, isolated on a transparent background, centred with padding." },
-    { "id": "icon-sticker-online", "category": "icon", "size": "1024x1024", "transparent": true, "width": 160, "prompt": "Single 3D sticker icon: a small globe with a playing card orbiting it like a ring, glossy, isolated on a transparent background, centred with padding." },
-    {
-      "id": "og-cover",
-      "category": "marketing",
-      "size": "1536x1024",
-      "width": 1200,
-      "prompt": "Social share banner: on a dark ink-navy background with warm red and gold glows, a cartoon bull charging through a fan of cream playing cards on the right side; empty space on the left for a headline. Cinematic, bold."
-    }
+    { "id": "sticker-lol", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 😂)", "prompt": "Reaction sticker: geometric bull head crying with laughter, eyes squeezed shut, big tears flying sideways, mouth wide open. Thick white sticker outline. TRANSPARENT background." },
+    { "id": "sticker-wow", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 😱)", "prompt": "Reaction sticker: geometric bull head in total shock, huge round eyes, tiny pupils, horns jolted upward, sweat drop. Thick white sticker outline. TRANSPARENT background." },
+    { "id": "sticker-angry", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 😤)", "prompt": "Reaction sticker: furious geometric bull head, steam blasting out of both nostrils, deep V brows, bright red face. Thick white sticker outline. TRANSPARENT background." },
+    { "id": "sticker-clap", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 👏)", "prompt": "Reaction sticker: smug geometric bull slow-clapping with two small hooves, sarcastic half-lidded eyes. Thick white sticker outline. TRANSPARENT background." },
+    { "id": "sticker-fire", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 🔥)", "prompt": "Reaction sticker: geometric bull head with flaming horns and sunglasses, 'on fire' swagger. Thick white sticker outline. TRANSPARENT background." },
+    { "id": "sticker-moo", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 🐮)", "prompt": "Reaction sticker: geometric bull head mooing loudly straight at the viewer, mouth wide open, motion lines, nose ring swinging. Thick white sticker outline. TRANSPARENT background." },
+    { "id": "sticker-skull", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 💀)", "prompt": "Reaction sticker: geometric bull head turned ghost-white with X eyes and a tiny soul floating out of the top, 'I'm dead' joke. Thick white sticker outline. TRANSPARENT background." },
+    { "id": "sticker-pray", "category": "sticker", "priority": "optional", "size": "1024x1024", "transparent": true, "width": 192, "where": "In-game reaction (replaces 🙏)", "prompt": "Reaction sticker: geometric bull with hooves pressed together begging, huge shiny puppy eyes, 'please don't give me that row'. Thick white sticker outline. TRANSPARENT background." }
   ]
 }

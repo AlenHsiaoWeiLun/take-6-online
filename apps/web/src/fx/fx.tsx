@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Card } from '@take6/shared';
 import { GameCard } from '../components/GameCard';
 import { Bullhead } from '../art/icons';
+import { Starburst } from '../art/BullMark';
 
 /**
  * One overlay for every transient effect (flying cards, bursts, particles, emoji).
@@ -26,7 +27,7 @@ type Effect =
   | { id: number; kind: 'cards'; cards: RectCard[]; to: DOMRect; theme: string; glow: string }
   | { id: number; kind: 'burst'; x: number; y: number; text: string; color: string; big: boolean }
   | { id: number; kind: 'particles'; x: number; y: number; colors: string[]; count: number; spread: number; shape: 'dot' | 'bull' | 'star' }
-  | { id: number; kind: 'emoji'; x: number; y: number; emoji: string };
+  | { id: number; kind: 'emoji'; x: number; y: number; emoji: string; image: string | null };
 
 let effects: Effect[] = [];
 let nextId = 1;
@@ -66,9 +67,9 @@ export const fx = {
     const c = center(at);
     add({ kind: 'particles', x: c.x, y: c.y, colors: opts.colors, count: opts.count ?? 12, spread: opts.spread ?? 90, shape: opts.shape ?? 'dot' }, 1300, opts.delay);
   },
-  emoji(at: DOMRect, emoji: string) {
+  emoji(at: DOMRect, emoji: string, image: string | null = null) {
     const c = center(at);
-    add({ kind: 'emoji', x: c.x, y: at.top, emoji }, 2200);
+    add({ kind: 'emoji', x: c.x, y: at.top, emoji, image }, 2200);
   },
   shake(strength: 'soft' | 'hard' = 'soft') {
     if (reduced()) return;
@@ -144,6 +145,16 @@ function Burst({ effect }: { effect: Extract<Effect, { kind: 'burst' }> }) {
       animate={{ y: effect.big ? -70 : -48, scale: [0.3, effect.big ? 1.6 : 1.25, 1], opacity: [0, 1, 1, 0] }}
       transition={{ duration: 1.3, times: [0, 0.2, 0.75, 1], ease: 'easeOut' }}
     >
+      {effect.big && (
+        <motion.span
+          className="absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2"
+          initial={{ rotate: -30, scale: 0.4 }}
+          animate={{ rotate: 20, scale: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+        >
+          <Starburst size={130} color="#E5484D" />
+        </motion.span>
+      )}
       <span
         className="flex items-center gap-1 rounded-full px-3 py-1 font-display font-extrabold text-white shadow-xl"
         style={{
@@ -213,7 +224,7 @@ function FloatingEmoji({ effect }: { effect: Extract<Effect, { kind: 'emoji' }> 
           }}
           transition={{ duration: i === 0 ? 1.9 : 1.4, delay: i * 0.12, ease: 'easeOut' }}
         >
-          {effect.emoji}
+          {effect.image ? <img src={effect.image} alt="" className="block" style={{ width: i === 0 ? 64 : 34 }} draggable={false} /> : effect.emoji}
         </motion.span>
       ))}
     </>

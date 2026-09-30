@@ -18,7 +18,9 @@
     "test": "vitest run",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:migrate": "npm run db:migrate -w @take6/server",
-    "art": "node scripts/generate-art.mjs"
+    "art": "node scripts/generate-art.mjs",
+    "art:import": "node scripts/generate-art.mjs --import",
+    "art:brief": "node scripts/art-brief.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

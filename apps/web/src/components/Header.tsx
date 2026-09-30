@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { Logo } from '../art/Logo';
-import { IconMusic, IconMusicOff, IconMute, IconSparkle, IconVolume } from '../art/icons';
+import { IconMusic, IconMusicOff, IconMute, IconSettings, IconSparkle, IconVolume } from '../art/icons';
 import { Avatar } from './Avatar';
 import { ProfileDialog } from './ProfileDialog';
 import { SignInDialog } from './SignIn';
@@ -59,23 +59,18 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
         )}
         <div className="ml-auto flex items-center gap-2">
           {!session.isPlus && (
-            <Link to="/plus" className="btn btn-gold btn-sm hidden xs:inline-flex">
-              <IconSparkle size={15} /> Plus
+            <Link to="/plus" className="hidden items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-semibold text-hay hover:bg-hay/10 sm:inline-flex">
+              <IconSparkle size={14} /> Plus
             </Link>
           )}
-          <button
-            className="btn btn-ghost btn-sm !px-2.5 font-bold"
-            onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
-            aria-label={lang === 'zh' ? 'Switch to English' : '切換為中文'}
-          >
-            {lang === 'zh' ? 'EN' : '中'}
-          </button>
-          <button className="btn btn-ghost btn-sm hidden !px-2.5 sm:inline-flex" onClick={() => setMusic(!music)} aria-label={music ? t('Music off') : t('Music on')}>
-            {music ? <IconMusic size={17} /> : <IconMusicOff size={17} />}
-          </button>
-          <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setMuted(!muted)} aria-label={muted ? t('Unmute') : t('Mute')}>
-            {muted ? <IconMute size={17} /> : <IconVolume size={17} />}
-          </button>
+          <SettingsMenu
+            lang={lang}
+            onLang={() => setLang(lang === 'zh' ? 'en' : 'zh')}
+            muted={muted}
+            onMute={() => setMuted(!muted)}
+            music={music}
+            onMusic={() => setMusic(!music)}
+          />
           {authEnabled && !user && (
             <button className="btn btn-primary btn-sm" onClick={() => setSignInOpen(true)}>
               {t('Sign in')}
@@ -96,5 +91,41 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
       <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
     </header>
+  );
+}
+
+function SettingsMenu(p: { lang: string; onLang: () => void; muted: boolean; onMute: () => void; music: boolean; onMusic: () => void }) {
+  const [open, setOpen] = useState(false);
+  const { t } = useLang();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: PointerEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    window.addEventListener('pointerdown', close);
+    return () => window.removeEventListener('pointerdown', close);
+  }, [open]);
+  const row = 'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-white/6';
+  return (
+    <div ref={ref} className="relative">
+      <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setOpen((o) => !o)} aria-label={t('Settings')} aria-expanded={open}>
+        <IconSettings size={17} />
+      </button>
+      {open && (
+        <div className="panel absolute right-0 top-11 z-50 w-56 bg-ink-850 p-1.5">
+          <button className={row} onClick={p.onLang}>
+            <span>{t('Language')}</span>
+            <span className="text-fog">{p.lang === 'zh' ? '中文 → EN' : 'EN → 中文'}</span>
+          </button>
+          <button className={row} onClick={p.onMute}>
+            <span className="flex items-center gap-2">{p.muted ? <IconMute size={16} /> : <IconVolume size={16} />} {t('Sound effects')}</span>
+            <span className={p.muted ? 'text-fog' : 'text-mint'}>{p.muted ? t('Off') : t('On')}</span>
+          </button>
+          <button className={row} onClick={p.onMusic}>
+            <span className="flex items-center gap-2">{p.music ? <IconMusic size={16} /> : <IconMusicOff size={16} />} {t('Music')}</span>
+            <span className={p.music ? 'text-mint' : 'text-fog'}>{p.music ? t('On') : t('Off')}</span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

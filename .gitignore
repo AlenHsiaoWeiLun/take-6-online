@@ -15,3 +15,6 @@ apps/*/.env
 apps/*/.env.local
 apps/*/dist
 .vercel
+
+# raw images before `npm run art:import`
+scripts/art-incoming/

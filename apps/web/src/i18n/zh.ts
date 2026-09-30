@@ -129,8 +129,8 @@ export const zh: Record<string, string> = {
   '{name}’s {v} is too low — they’re picking a row to take': '{name} 的 {v} 太小了，正在選要收哪一列',
   'You place {v} on row {r}': '你把 {v} 放到第 {r} 列',
   '{name} places {v} on row {r}': '{name} 把 {v} 放到第 {r} 列',
-  'You take row {r} · +{p} bullheads': '你收走第 {r} 列 · +{p} 牛頭',
-  '{name} takes row {r} · +{p} bullheads': '{name} 收走第 {r} 列 · +{p} 牛頭',
+  'You swallow row {r} · +{p} bullheads': '你吞下第 {r} 列 · +{p} 牛頭 🐮💥',
+  '{name} swallows row {r} · +{p} bullheads': '{name} 吞下第 {r} 列 · +{p} 牛頭 🐮💥',
   'Row {n}: {p} bullheads': '第 {n} 列：{p} 個牛頭',
   Take: '收走',
   'Play {v}': '出 {v}',
@@ -229,8 +229,8 @@ export const zh: Record<string, string> = {
   // polish pass
   Leader: '領先',
   '6th card!': '第六張！',
-  'Uh-oh… your {v} is the sixth card!': '糟了…你的 {v} 是第六張！',
-  'Uh-oh… {name}’s {v} is the sixth card!': '糟了…{name} 的 {v} 是第六張！',
+  'Wait. Your {v} is the sixth card.': '等等。你的 {v} 是第六張。',
+  'Wait. {name}’s {v} is the sixth card.': '等等。{name} 的 {v} 是第六張。',
   'Tap a card, then tap again — or flick it up': '點一下選牌、再點一次出牌，或把牌往上滑',
   'Music on': '開啟音樂',
   'Music off': '關閉音樂',
@@ -283,6 +283,21 @@ export const zh: Record<string, string> = {
   'That email doesn’t look right.': 'Email 格式好像不對。',
   'Too many messages — please try again later.': '訊息太多了，請稍後再試。',
   'Messages are not available yet — please email us instead.': '目前無法傳送訊息，請改用 email 聯絡我們。',
+
+  // brand refresh
+  '2–10 players. Learn it in 5 minutes. Then start ruining your friends.': '2–10 人，5 分鐘學會，然後開始害朋友。',
+  'Create room': '建立房間',
+  'Alone?': '一個人？',
+  'Practise vs bots': '先跟電腦練一局',
+  'Match with strangers': '隨機配對陌生人',
+  'Wait. This one’s the sixth.': '等等。這張是第六張。',
+  'A sixth card lands on a full row and the player takes all five cards': '第六張牌落在已滿的一列，出牌的人吃下前面五張',
+  Settings: '設定',
+  Language: '語言',
+  'Sound effects': '音效',
+  Music: '音樂',
+  On: '開',
+  Off: '關',
 
   // server messages
   'That room doesn’t exist or has closed.': '這個房間不存在或已關閉。',

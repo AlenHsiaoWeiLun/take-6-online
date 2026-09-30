@@ -1,4 +1,4 @@
-import { useState, type MutableRefObject } from 'react';
+import { useEffect, useState, type MutableRefObject } from 'react';
 import clsx from 'clsx';
 import { MAX_PLAYERS, MIN_PLAYERS, type RoomSettings, type RoomSnapshot } from '@take6/shared';
 import { Avatar } from '../components/Avatar';
@@ -7,11 +7,21 @@ import { IconBot, IconCheck, IconClose, IconCopy, IconCrown, IconGlobe, IconLock
 import { useSession } from '../state/session';
 import { useCountdown } from './useCountdown';
 import { config } from '../lib/config';
+import { ProfileDialog } from '../components/ProfileDialog';
 import { useT } from '../i18n';
 
 export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clockOffset: MutableRefObject<number> }) {
-  const { socket } = useSession();
+  const { socket, session, updateProfile } = useSession();
   const { room, self } = snapshot;
+  const [name, setName] = useState(session.name);
+  const [profileOpen, setProfileOpen] = useState(false);
+  useEffect(() => {
+    setName(session.name);
+  }, [session.name]);
+  const commitName = () => {
+    const clean = name.trim().slice(0, 16);
+    if (clean && clean !== session.name) updateProfile({ name: clean });
+  };
   const me = room.players.find((p) => p.id === self.playerId);
   const isHost = !!me?.isHost;
   const [copied, setCopied] = useState(false);
@@ -56,6 +66,23 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
             )}
           </div>
           <p className="mt-1 text-sm text-fog">{t('Share the code or link — friends can join from any device.')}</p>
+          {self.playerId && (
+            <div className="mt-4 flex max-w-sm items-center gap-2.5">
+              <button onClick={() => setProfileOpen(true)} className="shrink-0 rounded-full transition hover:scale-105" aria-label={t('Choose character')}>
+                <Avatar id={session.avatar} size={42} ring="rgba(255,255,255,.18)" />
+              </button>
+              <input
+                className="input !py-2"
+                value={name}
+                maxLength={16}
+                placeholder={t('Your name')}
+                aria-label={t('Your name')}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={commitName}
+                onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget.blur(), commitName())}
+              />
+            </div>
+          )}
         </div>
         {autoStart !== null && (
           <div className="panel flex items-center gap-3 px-4 py-3">
@@ -169,6 +196,7 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
       </div>
 
       <AdSlot slot="banner" className="mt-8" />
+      <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }

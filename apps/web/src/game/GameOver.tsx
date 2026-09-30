@@ -9,6 +9,8 @@ import { Modal } from '../components/Modal';
 import { Avatar } from '../components/Avatar';
 import { AdSlot } from '../components/AdSlot';
 import { WinnerArt } from '../art/Illustrations';
+import { Art } from '../art/Art';
+import { BullMark } from '../art/BullMark';
 import { Bullhead, IconBot, IconSparkle } from '../art/icons';
 import { useSession } from '../state/session';
 import { sound } from '../lib/sound';
@@ -51,6 +53,8 @@ export function GameOver({
 
   if (!result) return null;
   const winner = result.standings[0];
+  const myStanding = result.standings.find((s) => s.playerId === self.playerId);
+  const iLost = !!myStanding && myStanding.rank === Math.max(...result.standings.map((s) => s.rank)) && result.standings.length > 1;
   const winners = result.standings.filter((s) => s.rank === 1);
   const headline = iWon
     ? winners.length > 1 ? t('Shared victory!') : t('You win!')
@@ -59,7 +63,13 @@ export function GameOver({
   return (
     <Modal open label={t('Game over')} className="max-w-lg">
       <div className="text-center">
-        <WinnerArt avatar={winner.avatar} />
+        {iWon ? (
+          <Art id="illustration-win" alt="" className="mx-auto size-36 object-contain" fallback={<WinnerArt avatar={winner.avatar} />} />
+        ) : iLost ? (
+          <Art id="illustration-lose" alt="" className="mx-auto size-36 object-contain" fallback={<div className="mx-auto w-fit"><BullMark size={112} mood="shock" /></div>} />
+        ) : (
+          <WinnerArt avatar={winner.avatar} />
+        )}
         <div className="eyebrow mt-4">{t('Game over')}</div>
         <h2 className="mt-1 font-display text-4xl font-extrabold tracking-tight">{headline}</h2>
         <p className="mt-1 text-sm text-fog">{t('Fewest bullheads wins.')}</p>

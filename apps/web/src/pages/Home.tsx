@@ -3,30 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { makeCard, type PublicRoomSummary } from '@take6/shared';
 import { HeroArt } from '../art/Illustrations';
-import { IconArrowRight, IconBot, IconGlobe, IconLock, IconSparkle, IconTakeRow } from '../art/icons';
+import { IconArrowRight, IconSparkle, IconTakeRow } from '../art/icons';
 import { AdSlot } from '../components/AdSlot';
-import { Avatar } from '../components/Avatar';
 import { GameCard } from '../components/GameCard';
-import { ProfileDialog } from '../components/ProfileDialog';
 import { request, useSession } from '../state/session';
 import { api } from '../lib/api';
 import { BRAND } from '../brand';
 import { useLang } from '../i18n';
 
 export function Home() {
-  const { socket, connected, session, updateProfile } = useSession();
+  const { socket, connected, session } = useSession();
   const navigate = useNavigate();
-  const [name, setName] = useState(session.name);
   const [code, setCode] = useState('');
+  const [joining, setJoining] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [openRooms, setOpenRooms] = useState<PublicRoomSummary[]>([]);
   const { t, lang } = useLang();
-
-  useEffect(() => {
-    setName(session.name);
-  }, [session.name]);
 
   useEffect(() => {
     let alive = true;
@@ -39,13 +32,7 @@ export function Home() {
     };
   }, []);
 
-  const commitName = () => {
-    const clean = name.trim().slice(0, 16);
-    if (clean && clean !== session.name) updateProfile({ name: clean });
-  };
-
   const go = async (kind: string, run: () => Promise<{ ok: true; code: string } | { ok: false; error: string }>) => {
-    commitName();
     setBusy(kind);
     setError(null);
     try {
@@ -68,55 +55,31 @@ export function Home() {
     <div>
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-10 pt-10 md:grid-cols-[1.05fr_1fr] md:pt-16">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <span className="chip">
-            <span className="size-1.5 rounded-full bg-mint" /> {t('Free · 2–10 players · No download')}
-          </span>
-          <h1 className="mt-5 font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-balance sm:text-6xl lg:text-7xl">
+          <h1 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-balance sm:text-6xl lg:text-7xl">
             {lang === 'zh' ? (
               <>別拿到<br /><span className="text-bull">第六張</span>牌。</>
             ) : (
               <>Don’t take the <span className="text-bull">sixth</span> card.</>
             )}
           </h1>
-          <p className="mt-5 max-w-md text-lg leading-relaxed text-fog">
-            {t('The quick, sneaky bullhead card game — the same 104-card rules as 6 nimmt! and Take 5. Invite friends to a private table, drop into a public match, or practise against sharp bots.')}
-          </p>
+          <p className="mt-5 max-w-md text-lg leading-relaxed text-mist">{t('2–10 players. Learn it in 5 minutes. Then start ruining your friends.')}</p>
 
-          <div className="panel mt-8 max-w-md p-4 sm:p-5">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setProfileOpen(true)} className="rounded-full transition hover:scale-105" aria-label={t('Choose character')}>
-                <Avatar id={session.avatar} size={48} ring="rgba(255,255,255,.15)" />
-              </button>
-              <input
-                className="input"
-                placeholder={t('Your name')}
-                value={name}
-                maxLength={16}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={commitName}
-              />
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-2.5">
-              <button className="btn btn-primary btn-lg" disabled={!connected || !!busy} onClick={() => quick(false)}>
-                <IconGlobe size={18} /> {busy === 'online' ? t('Finding…') : t('Play online')}
-              </button>
-              <button className="btn btn-ghost btn-lg" disabled={!connected || !!busy} onClick={() => quick(true)}>
-                <IconBot size={18} /> {busy === 'bots' ? t('Dealing…') : t('vs Bots')}
-              </button>
-            </div>
-            <div className="mt-2.5 flex gap-2.5">
-              <button className="btn btn-ghost flex-1" disabled={!connected || !!busy} onClick={create}>
-                <IconLock size={16} /> {t('Private room')}
-              </button>
+          {/* Friends are the front door: create or join, nothing else competing for attention. */}
+          <div className="mt-8 grid max-w-md grid-cols-2 gap-3">
+            <button className="btn btn-primary btn-lg !py-4 !text-lg" disabled={!connected || !!busy} onClick={create}>
+              {busy === 'create' ? t('Dealing…') : t('Create room')}
+            </button>
+            {joining ? (
               <form
-                className="flex w-[9.5rem] shrink-0 gap-2"
+                className="flex gap-2"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (code.trim().length === 4) join(code.trim().toUpperCase());
                 }}
               >
                 <input
-                  className="input !px-2 !py-2 text-center font-display text-lg font-bold uppercase tracking-[0.2em] placeholder:tracking-[0.12em]"
+                  autoFocus
+                  className="input !px-2 text-center font-display text-xl font-bold uppercase tracking-[0.25em] placeholder:tracking-[0.12em]"
                   placeholder={t('CODE')}
                   value={code}
                   maxLength={4}
@@ -127,10 +90,24 @@ export function Home() {
                   <IconArrowRight size={18} />
                 </button>
               </form>
-            </div>
-            {!connected && <p className="mt-3 text-sm text-fog">{t('Connecting to the game server…')}</p>}
-            {error && <p className="mt-3 text-sm text-bull">{error}</p>}
+            ) : (
+              <button className="btn btn-ghost btn-lg !py-4 !text-lg" disabled={!connected} onClick={() => setJoining(true)}>
+                {t('Join room')}
+              </button>
+            )}
           </div>
+          <p className="mt-4 text-sm text-fog">
+            {t('Alone?')}{' '}
+            <button className="font-semibold text-mist underline decoration-white/20 underline-offset-4 hover:text-white" disabled={!connected || !!busy} onClick={() => quick(true)}>
+              {busy === 'bots' ? t('Dealing…') : t('Practise vs bots')}
+            </button>{' '}
+            ·{' '}
+            <button className="font-semibold text-mist underline decoration-white/20 underline-offset-4 hover:text-white" disabled={!connected || !!busy} onClick={() => quick(false)}>
+              {busy === 'online' ? t('Finding…') : t('Match with strangers')}
+            </button>
+          </p>
+          {!connected && <p className="mt-3 text-sm text-fog">{t('Connecting to the game server…')}</p>}
+          {error && <p className="mt-3 text-sm text-bull">{error}</p>}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
@@ -212,7 +189,6 @@ export function Home() {
         </section>
       )}
 
-      <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }
