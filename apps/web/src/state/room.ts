@@ -15,6 +15,7 @@ export function useRoom(code: string) {
   const [error, setError] = useState<string | null>(null);
   const [closedReason, setClosedReason] = useState<string | null>(null);
   const [emotes, setEmotes] = useState<EmoteBubble[]>([]);
+  const [ratings, setRatings] = useState<Record<string, { rating: number; delta: number }>>({});
   const clockOffset = useRef(0);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function useRoom(code: string) {
       if (snap.room.code !== code) return;
       clockOffset.current = snap.room.serverNow - Date.now();
       setSnapshot(snap);
+      if (snap.room.phase !== 'gameEnd') setRatings((prev) => (Object.keys(prev).length ? {} : prev));
     };
     const onEmote = (e: { playerId: string; emote: string }) => {
       const key = Date.now() + Math.random();
@@ -30,6 +32,7 @@ export function useRoom(code: string) {
       setTimeout(() => setEmotes((prev) => prev.filter((x) => x.key !== key)), 2600);
     };
     const onClosed = ({ reason }: { reason: string }) => setClosedReason(reason);
+    socket.on('room:ratings', setRatings);
     socket.on('room:state', onState);
     socket.on('room:emote', onEmote);
     socket.on('room:closed', onClosed);
@@ -37,6 +40,7 @@ export function useRoom(code: string) {
       socket.off('room:state', onState);
       socket.off('room:emote', onEmote);
       socket.off('room:closed', onClosed);
+      socket.off('room:ratings', setRatings);
     };
   }, [socket, code]);
 
@@ -45,5 +49,5 @@ export function useRoom(code: string) {
     socket.emit('room:join', { code }, (res) => setError(res.ok ? null : res.error));
   }, [socket, connected, code, closedReason]);
 
-  return { snapshot, error, closedReason, emotes, clockOffset };
+  return { snapshot, error, closedReason, emotes, clockOffset, ratings };
 }

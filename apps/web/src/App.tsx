@@ -8,6 +8,7 @@ import { Plus, PlusSuccess } from './pages/Plus';
 import { Leaderboard } from './pages/Leaderboard';
 import { Rules } from './pages/Rules';
 import { Privacy, Terms } from './pages/Legal';
+import { Contact } from './pages/Contact';
 import { artUrl } from './art/Art';
 import { useT } from './i18n';
 import { LANDINGS, Landing } from './pages/Landing';
@@ -56,6 +57,7 @@ export default function App() {
           {LANDINGS.map((l) => (
             <Route key={l.path} path={l.path.slice(1)} element={<Landing content={l} />} />
           ))}
+          <Route path="contact" element={<Contact />} />
           <Route path="privacy" element={<Privacy />} />
           <Route path="terms" element={<Terms />} />
           <Route

@@ -143,4 +143,6 @@ export interface ServerToClientEvents {
   'room:state': (snapshot: RoomSnapshot) => void;
   'room:emote': (payload: { playerId: string; emote: string }) => void;
   'room:closed': (payload: { reason: string }) => void;
+  /** Sent shortly after game end: Elo change for each signed-in player, keyed by public player id. */
+  'room:ratings': (ratings: Record<string, { rating: number; delta: number }>) => void;
 }

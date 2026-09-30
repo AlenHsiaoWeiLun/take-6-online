@@ -13,6 +13,9 @@ export const env = {
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
   stripePricePlus: process.env.STRIPE_PRICE_PLUS || '',
   botEngine: (process.env.BOT_ENGINE || 'builtin') as 'builtin' | 'fai',
+  resendApiKey: process.env.RESEND_API_KEY || '',
+  feedbackTo: process.env.FEEDBACK_TO || '',
+  feedbackFrom: process.env.FEEDBACK_FROM || 'Bullheads <feedback@bullheadsonline.com>',
 };
 
 export const features = {

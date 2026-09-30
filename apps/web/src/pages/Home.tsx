@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { makeCard, type PublicRoomSummary } from '@take6/shared';
 import { HeroArt } from '../art/Illustrations';
-import { Art } from '../art/Art';
-import { IconArrowRight, IconBot, IconGlobe, IconLock, IconSparkle, IconTakeRow, IconUsers } from '../art/icons';
+import { IconArrowRight, IconBot, IconGlobe, IconLock, IconSparkle, IconTakeRow } from '../art/icons';
 import { AdSlot } from '../components/AdSlot';
 import { Avatar } from '../components/Avatar';
 import { GameCard } from '../components/GameCard';
@@ -163,10 +162,10 @@ export function Home() {
         <AdSlot slot="banner" className="my-6" />
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pt-10">
+      <section className="mx-auto max-w-6xl px-4 pt-6">
         <div className="eyebrow">{t('How it works')}</div>
         <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">{t('Easy to learn. Painful to lose.')}</h2>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
           <Step n={1} title={t('Everyone picks a card')} body={t('All players choose a card from their hand at the same time. No turns, no waiting.')}>
             <div className="flex -space-x-5">
               {[23, 67, 8].map((v, i) => (
@@ -197,27 +196,21 @@ export function Home() {
       </section>
 
       {!session.isPlus && (
-        <section className="mx-auto mt-16 max-w-6xl px-4">
-          <div className="panel relative overflow-hidden p-6 sm:p-10">
-            <div className="absolute -right-24 -top-24 size-72 rounded-full bg-hay/15 blur-3xl" />
-            <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
-              <Art id="render-card-stack" alt="" className="hidden size-28 object-contain md:block" fallback={null} />
-              <div className="md:mr-auto">
-                <span className="chip border-hay/30 bg-hay/10 text-hay"><IconSparkle size={12} /> {BRAND.plus}</span>
-                <h3 className="mt-3 font-display text-2xl font-bold sm:text-3xl">{t('No ads. Gorgeous decks. Two exclusive bulls.')}</h3>
-                <p className="mt-2 max-w-lg text-fog">{t('One small payment, yours forever. Support the table and play in style.')}</p>
-              </div>
-              <Link to="/plus" className="btn btn-gold btn-lg">{t('See Plus')} <IconArrowRight size={18} /></Link>
-            </div>
-          </div>
+        <section className="mx-auto mt-10 max-w-6xl px-4">
+          <Link
+            to="/plus"
+            className="group flex items-center justify-between gap-3 rounded-2xl border border-hay/20 bg-hay/[0.06] px-4 py-3 text-sm transition hover:bg-hay/10"
+          >
+            <span className="flex items-center gap-2 text-mist">
+              <IconSparkle size={15} className="text-hay" />
+              <span>
+                <b className="text-hay">{BRAND.plus}</b> · {t('No ads. Gorgeous decks. Two exclusive bulls.')}
+              </span>
+            </span>
+            <IconArrowRight size={16} className="shrink-0 text-hay transition group-hover:translate-x-0.5" />
+          </Link>
         </section>
       )}
-
-      <section className="mx-auto mt-16 grid max-w-6xl gap-4 px-4 sm:grid-cols-3">
-        <Feature art="icon-sticker-friends" icon={<IconUsers size={20} />} title={t('Up to 10 players')} body={t('Share a 4-letter code. Friends join from any phone or laptop in seconds.')} />
-        <Feature art="icon-sticker-bots" icon={<IconBot size={20} />} title={t('Bots that think')} body={t('Monte-Carlo bots simulate hundreds of outcomes per turn. Pick easy, normal or hard.')} />
-        <Feature art="icon-sticker-online" icon={<IconGlobe size={20} />} title={t('Drop-in matchmaking')} body={t('Hit Play online and you’re seated at a public table. Empty seats fill with bots.')} />
-      </section>
 
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
@@ -233,16 +226,6 @@ function Step({ n, title, body, children }: { n: number; title: string; body: st
         <h3 className="font-display text-lg font-bold">{title}</h3>
       </div>
       <p className="mt-2 text-sm leading-relaxed text-fog">{body}</p>
-    </div>
-  );
-}
-
-function Feature({ art, icon, title, body }: { art: string; icon: React.ReactNode; title: string; body: string }) {
-  return (
-    <div className="p-2">
-      <Art id={art} alt="" className="size-14 object-contain" fallback={<div className="grid size-10 place-items-center rounded-xl bg-white/6 text-hay">{icon}</div>} />
-      <h3 className="mt-3 font-semibold">{title}</h3>
-      <p className="mt-1 text-sm leading-relaxed text-fog">{body}</p>
     </div>
   );
 }

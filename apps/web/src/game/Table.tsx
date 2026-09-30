@@ -33,9 +33,10 @@ interface Props {
   snapshot: RoomSnapshot;
   emotes: EmoteBubble[];
   clockOffset: MutableRefObject<number>;
+  ratings: Record<string, { rating: number; delta: number }>;
 }
 
-export function Table({ snapshot, emotes, clockOffset }: Props) {
+export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
   const { socket, session } = useSession();
   const navigate = useNavigate();
   const t = useT();
@@ -159,7 +160,7 @@ export function Table({ snapshot, emotes, clockOffset }: Props) {
       </div>
 
       <HandSummary snapshot={snapshot} clockOffset={clockOffset} />
-      <GameOver snapshot={snapshot} onLeave={() => navigate('/')} />
+      <GameOver snapshot={snapshot} ratings={ratings} onLeave={() => navigate('/')} />
     </div>
   );
 }

@@ -167,7 +167,10 @@ export class RoomManager {
       code,
       settings,
       {
-        onGameEnd: (summary: GameSummary) => void recordGame(summary),
+        onGameEnd: (summary: GameSummary) =>
+          void recordGame(summary).then((ratings) => {
+            if (Object.keys(ratings).length) this.io.to(summary.code).emit('room:ratings', ratings);
+          }),
         onClose: (closed) => this.rooms.delete(closed.code),
       },
       { autoStart },

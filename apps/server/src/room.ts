@@ -80,9 +80,10 @@ interface Seat {
 export interface GameSummary {
   code: string;
   mode: RoomSettings['mode'];
+  botLevel: RoomSettings['botLevel'];
   startedAt: Date;
   hands: number;
-  standings: { userId: string | null; name: string; isBot: boolean; score: number; rank: number }[];
+  standings: { playerId: string; userId: string | null; name: string; isBot: boolean; score: number; rank: number }[];
 }
 
 export interface RoomHooks {
@@ -620,9 +621,11 @@ export class Room {
     this.hooks.onGameEnd({
       code: this.code,
       mode: this.settings.mode,
+      botLevel: this.settings.botLevel,
       startedAt: this.startedAt,
       hands: this.handNumber,
       standings: this.seats.map((s, i) => ({
+        playerId: s.id,
         userId: s.identity?.userId ?? null,
         name: s.name,
         isBot: s.isBot,

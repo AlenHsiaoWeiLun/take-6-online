@@ -24,13 +24,19 @@ model Profile {
   onlineGames      Int       @default(0)
   onlineWins       Int       @default(0)
   totalBullheads   Int       @default(0)
+  /// Multiplayer Elo (see packages/shared/src/elo.ts).
+  rating           Int       @default(1200)
+  peakRating       Int       @default(1200)
+  ratedGames       Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   matches   MatchPlayer[]
   purchases Purchase[]
+  feedback  Feedback[]
 
   @@index([onlineWins])
+  @@index([rating])
 }
 
 model Match {
@@ -49,13 +55,15 @@ model Match {
 }
 
 model MatchPlayer {
-  id        String   @id @default(cuid())
-  matchId   String
-  profileId String?  @db.Uuid
-  name      String
-  isBot     Boolean
-  score     Int
-  rank      Int
+  id           String  @id @default(cuid())
+  matchId      String
+  profileId    String? @db.Uuid
+  name         String
+  isBot        Boolean
+  score        Int
+  rank         Int
+  ratingBefore Int?
+  ratingDelta  Int?
 
   match   Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
   profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
@@ -75,4 +83,22 @@ model Purchase {
   createdAt       DateTime @default(now())
 
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
+
+/// Messages from the in-site contact form.
+model Feedback {
+  id        String   @id @default(cuid())
+  profileId String?  @db.Uuid
+  name      String?
+  email     String?
+  topic     String
+  message   String
+  page      String?
+  userAgent String?
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }

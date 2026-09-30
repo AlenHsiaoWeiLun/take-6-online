@@ -10,7 +10,7 @@ import { useT } from '../i18n';
 export function RoomPage() {
   const code = (useParams().code ?? '').toUpperCase();
   const { socket, connected } = useSession();
-  const { snapshot, error, closedReason, emotes, clockOffset } = useRoom(code);
+  const { snapshot, error, closedReason, emotes, clockOffset, ratings } = useRoom(code);
   const t = useT();
 
   useEffect(() => () => void socket?.emit('room:leave'), [socket]);
@@ -41,7 +41,7 @@ export function RoomPage() {
       </>
     );
   }
-  return <Table snapshot={snapshot} emotes={emotes} clockOffset={clockOffset} />;
+  return <Table snapshot={snapshot} emotes={emotes} clockOffset={clockOffset} ratings={ratings} />;
 }
 
 function Notice({ title, body, spinner }: { title: string; body: string; spinner?: boolean }) {

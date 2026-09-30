@@ -16,7 +16,15 @@ import { useCountdown } from './useCountdown';
 import { BRAND } from '../brand';
 import { useT } from '../i18n';
 
-export function GameOver({ snapshot, onLeave }: { snapshot: RoomSnapshot; onLeave: () => void }) {
+export function GameOver({
+  snapshot,
+  ratings,
+  onLeave,
+}: {
+  snapshot: RoomSnapshot;
+  ratings: Record<string, { rating: number; delta: number }>;
+  onLeave: () => void;
+}) {
   const { socket, session, user } = useSession();
   const { room, self } = snapshot;
   const result = room.phase === 'gameEnd' ? room.result : null;
@@ -81,6 +89,22 @@ export function GameOver({ snapshot, onLeave }: { snapshot: RoomSnapshot; onLeav
             <span className="flex items-center gap-1 font-display text-lg font-bold tabular">
               <AnimatedNumber value={s.score} /> <Bullhead size={14} className="text-bull" />
             </span>
+            {ratings[s.playerId] && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 18 }}
+                className={clsx(
+                  'ml-1 w-16 text-right text-xs font-bold tabular',
+                  ratings[s.playerId].delta > 0 ? 'text-mint' : ratings[s.playerId].delta < 0 ? 'text-[#ff9ea1]' : 'text-fog',
+                )}
+                title="Elo"
+              >
+                {ratings[s.playerId].delta > 0 ? '+' : ''}
+                {ratings[s.playerId].delta}
+                <span className="block text-[10px] font-medium text-fog">{ratings[s.playerId].rating}</span>
+              </motion.span>
+            )}
           </motion.li>
         ))}
       </ol>

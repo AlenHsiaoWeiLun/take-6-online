@@ -5,6 +5,7 @@ import { Logo } from '../art/Logo';
 import { IconMusic, IconMusicOff, IconMute, IconSparkle, IconVolume } from '../art/icons';
 import { Avatar } from './Avatar';
 import { ProfileDialog } from './ProfileDialog';
+import { SignInDialog } from './SignIn';
 import { useSession } from '../state/session';
 import { sound } from '../lib/sound';
 import { useLang } from '../i18n';
@@ -22,7 +23,11 @@ export function useMusic() {
 }
 
 export function Header({ minimal = false }: { minimal?: boolean }) {
-  const { session, connected } = useSession();
+  const { session, connected, user, authEnabled } = useSession();
+  const [signInOpen, setSignInOpen] = useState(false);
+  useEffect(() => {
+    if (user) setSignInOpen(false);
+  }, [user]);
   const [profileOpen, setProfileOpen] = useState(false);
   const [muted, setMuted] = useMuted();
   const [music, setMusic] = useMusic();
@@ -45,7 +50,7 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
               <NavLink
                 key={n.to}
                 to={n.to}
-                className={({ isActive }) => clsx('rounded-lg px-3 py-2 text-sm font-semibold transition', isActive ? 'bg-white/8 text-white' : 'text-fog hover:text-white')}
+                className={({ isActive }) => clsx('whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition', isActive ? 'bg-white/8 text-white' : 'text-fog hover:text-white')}
               >
                 {n.label}
               </NavLink>
@@ -71,6 +76,11 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
           <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setMuted(!muted)} aria-label={muted ? t('Unmute') : t('Mute')}>
             {muted ? <IconMute size={17} /> : <IconVolume size={17} />}
           </button>
+          {authEnabled && !user && (
+            <button className="btn btn-primary btn-sm" onClick={() => setSignInOpen(true)}>
+              {t('Sign in')}
+            </button>
+          )}
           <button
             onClick={() => setProfileOpen(true)}
             className="flex items-center gap-2 rounded-full border border-white/8 bg-white/5 py-1 pl-1 pr-3 transition hover:bg-white/10"
@@ -84,6 +94,7 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
         </div>
       </div>
       <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <SignInDialog open={signInOpen} onClose={() => setSignInOpen(false)} />
     </header>
   );
 }

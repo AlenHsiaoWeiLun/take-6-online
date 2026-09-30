@@ -110,6 +110,11 @@ In **DNS → Records**:
 3. **Privacy & messaging**: turn on Google's consent message (a certified CMP) for EEA, UK and Switzerland traffic. This is required for serving ads there.
 4. Ads never render for Plus members or on the live table. That keeps the game pleasant, which is what sells Plus.
 
+## 7b. Contact email and form
+
+- **Email:** in Cloudflare, open **Email → Email Routing** for the domain and add `hello@bullheadsonline.com` → your personal inbox. This is free, and your real address stays private.
+- **Form:** messages from `/contact` are saved in the `Feedback` table. View them in Supabase → Table Editor. To also get them by email, set `RESEND_API_KEY`, `FEEDBACK_TO` (your inbox) and `FEEDBACK_FROM` on Railway (resend.com, after verifying the domain).
+
 ## 8. Verify production
 
 ```bash

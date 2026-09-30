@@ -18,7 +18,8 @@ export function Footer() {
           <Link to="/plus" className="hover:text-white">Plus</Link>
           <Link to="/privacy" className="hover:text-white">{t('Privacy')}</Link>
           <Link to="/terms" className="hover:text-white">{t('Terms')}</Link>
-          <a href={`mailto:${BRAND.supportEmail}`} className="hover:text-white">{t('Contact')}</a>
+          <Link to="/contact" className="hover:text-white">{t('Contact')}</Link>
+          <a href={`mailto:${BRAND.supportEmail}`} className="hover:text-white">{BRAND.supportEmail}</a>
         </nav>
       </div>
     </footer>

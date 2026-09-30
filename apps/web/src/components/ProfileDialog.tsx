@@ -5,16 +5,22 @@ import { CARD_THEMES, CHARACTERS, makeCard } from '@take6/shared';
 import { Modal } from './Modal';
 import { Avatar } from './Avatar';
 import { GameCard } from './GameCard';
-import { IconGoogle, IconLock, IconLogOut, IconSparkle } from '../art/icons';
+import { IconLock, IconLogOut, IconSparkle, IconTrophy } from '../art/icons';
 import { useSession } from '../state/session';
 import { useT } from '../i18n';
+import { SignInPanel } from './SignIn';
+import { api } from '../lib/api';
 
 export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { session, updateProfile, user, authEnabled, signInWithGoogle, signInWithEmail, signOut } = useSession();
+  const { session, updateProfile, user, authEnabled, signOut } = useSession();
   const [name, setName] = useState(session.name);
-  const [email, setEmail] = useState('');
-  const [emailState, setEmailState] = useState<'idle' | 'sending' | 'sent' | string>('idle');
+  const [me, setMe] = useState<{ rating: number; rank: number | null; ratedGames: number; peakRating: number } | null>(null);
   const t = useT();
+
+  useEffect(() => {
+    if (!open || !user) return setMe(null);
+    api<{ profile: typeof me }>('/api/me').then((r) => setMe(r.profile)).catch(() => setMe(null));
+  }, [open, user]);
 
   useEffect(() => {
     if (open) setName(session.name);
@@ -36,6 +42,16 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
             {session.isPlus ? <span className="chip border-hay/30 bg-hay/10 text-hay"><IconSparkle size={12} /> Plus</span> : <span className="chip">{user ? t('Signed in') : t('Guest')}</span>}
           </div>
         </div>
+        {me && (
+          <div className="ml-auto text-right">
+            <div className="flex items-center justify-end gap-1 font-display text-2xl font-extrabold tabular text-hay">
+              <IconTrophy size={18} /> {me.rating}
+            </div>
+            <div className="text-xs text-fog">
+              {me.rank ? t('Rank #{n}', { n: me.rank }) : t('{n} more games to get ranked', { n: Math.max(0, 5 - me.ratedGames) })}
+            </div>
+          </div>
+        )}
       </div>
 
       <label className="mt-6 block">
@@ -128,31 +144,8 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
               </button>
             </div>
           ) : (
-            <div className="mt-3 space-y-3">
-              <p className="text-sm text-fog">{t('Sign in to save your stats, climb the leaderboard and keep Plus on every device.')}</p>
-              <button className="btn btn-ghost w-full" onClick={() => signInWithGoogle()}>
-                <IconGoogle /> {t('Continue with Google')}
-              </button>
-              <form
-                className="flex gap-2"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setEmailState('sending');
-                  try {
-                    await signInWithEmail(email);
-                    setEmailState('sent');
-                  } catch (err) {
-                    setEmailState((err as Error).message);
-                  }
-                }}
-              >
-                <input className="input" type="email" required placeholder="you@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <button className="btn btn-ghost shrink-0" disabled={emailState === 'sending'}>
-                  {t('Email link')}
-                </button>
-              </form>
-              {emailState === 'sent' && <p className="text-sm text-mint">{t('Check your inbox for a sign-in link.')}</p>}
-              {!['idle', 'sending', 'sent'].includes(emailState) && <p className="text-sm text-bull">{emailState}</p>}
+            <div className="mt-3">
+              <SignInPanel />
             </div>
           )}
         </div>
