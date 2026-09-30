@@ -53,56 +53,52 @@ export function Home() {
 
   return (
     <div>
-      <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-8 pt-6 md:grid-cols-[1fr_1.05fr] md:gap-10 md:pt-14">
+      {/* First screen = title → one line → two buttons → the table. Everything else waits below the fold. */}
+      <section className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-6xl content-center items-center gap-10 px-4 py-8 md:grid-cols-[1fr_1fr] md:gap-16">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <h1 className="font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-balance sm:text-6xl lg:text-7xl">
+          <h1 className="font-display text-[2.6rem] font-extrabold leading-[1.02] tracking-tight sm:text-[3.3rem] lg:text-[4rem]">
             {lang === 'zh' ? (
-              <>別拿到<br /><span className="text-bull">第六張</span>牌。</>
+              <>別拿到<br /><span className="text-bull">第六張牌。</span></>
             ) : (
-              <>Don’t take the <span className="text-bull">sixth</span> card.</>
+              <>Don’t take the<br /><span className="text-bull">sixth card.</span></>
             )}
           </h1>
-          <p className="mt-5 max-w-md text-lg leading-relaxed text-mist">{t('2–10 players. Learn it in 5 minutes. Then start ruining your friends.')}</p>
+          <p className="mt-5 max-w-md text-lg leading-relaxed text-mist">{t('2–10 players. Five minutes to learn. The grudges start next round.')}</p>
 
-          {/* Friends are the front door: create or join, nothing else competing for attention. */}
-          <div className="mt-8 grid max-w-md grid-cols-2 gap-3">
-            <button className="btn btn-primary btn-lg flex-col !gap-0 !py-3" disabled={!connected || !!busy} onClick={create}>
-              <span className="text-lg">{busy === 'create' ? t('Dealing…') : t('Create room')}</span>
-              <span className="text-xs font-medium text-white/80">{t('Get a link for friends')}</span>
+          <div className="mt-8 flex max-w-md flex-wrap gap-3">
+            <button className="btn btn-cta min-w-36" disabled={!connected || !!busy} onClick={create}>
+              {busy === 'create' ? t('Dealing…') : t('Create room')}
             </button>
             {joining ? (
               <form
-                className="flex flex-col gap-1"
+                className="flex gap-1.5"
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (code.trim().length === 4) join(code.trim().toUpperCase());
                 }}
               >
                 <label className="sr-only" htmlFor="room-code">{t('Room code')}</label>
-                <div className="flex gap-1.5">
-                  <input
-                    id="room-code"
-                    autoFocus
-                    className={clsx('input !px-2 text-center font-display text-xl font-bold uppercase tracking-[0.25em] placeholder:tracking-[0.1em]', error && '!border-bull')}
-                    placeholder={t('CODE')}
-                    value={code}
-                    maxLength={4}
-                    aria-invalid={!!error}
-                    aria-describedby={error ? 'join-error' : undefined}
-                    onChange={(e) => {
-                      setError(null);
-                      setCode(e.target.value.replace(/[^a-z]/gi, '').toUpperCase());
-                    }}
-                  />
-                  <button className="btn btn-ghost shrink-0 !px-3" disabled={code.length !== 4 || !connected || !!busy}>
-                    {busy === 'join' ? '…' : t('Join')}
-                  </button>
-                </div>
+                <input
+                  id="room-code"
+                  autoFocus
+                  className={clsx('input w-32 !rounded-[13px] !px-2 text-center font-display text-xl font-bold uppercase tracking-[0.25em] placeholder:tracking-[0.1em]', error && '!border-bull')}
+                  placeholder={t('CODE')}
+                  value={code}
+                  maxLength={4}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? 'join-error' : undefined}
+                  onChange={(e) => {
+                    setError(null);
+                    setCode(e.target.value.replace(/[^a-z]/gi, '').toUpperCase());
+                  }}
+                />
+                <button className="btn btn-outline shrink-0 !px-4" disabled={code.length !== 4 || !connected || !!busy}>
+                  {busy === 'join' ? '…' : t('Join')}
+                </button>
               </form>
             ) : (
-              <button className="btn btn-ghost btn-lg flex-col !gap-0 !py-3" disabled={!connected} onClick={() => setJoining(true)}>
-                <span className="text-lg">{t('Join room')}</span>
-                <span className="text-xs font-medium text-fog">{t('I have a 4-letter code')}</span>
+              <button className="btn btn-outline min-w-36" disabled={!connected} onClick={() => setJoining(true)}>
+                {t('Enter a code')}
               </button>
             )}
           </div>
@@ -111,28 +107,22 @@ export function Home() {
               <IconClose size={14} /> {error}
             </p>
           )}
-          <ol className="mt-3 flex max-w-md flex-wrap items-center gap-x-2 gap-y-1 text-xs text-mist">
-            <li className="flex items-center gap-1"><b className="grid size-4 place-items-center rounded-full bg-white/10 text-[10px]">1</b> {t('Create a room')}</li>
-            <IconArrowRight size={12} className="text-fog" />
-            <li className="flex items-center gap-1"><b className="grid size-4 place-items-center rounded-full bg-white/10 text-[10px]">2</b> {t('Send the link (LINE works)')}</li>
-            <IconArrowRight size={12} className="text-fog" />
-            <li className="flex items-center gap-1"><b className="grid size-4 place-items-center rounded-full bg-white/10 text-[10px]">3</b> {t('Everyone in → Deal')}</li>
-          </ol>
-          <div className="mt-4 flex max-w-md flex-wrap items-center gap-2 text-sm text-fog">
-            <span>{t('Alone?')}</span>
-            <button className="btn btn-ghost btn-sm" disabled={!connected || !!busy} onClick={() => quick(true)}>
-              <IconBot size={15} /> {busy === 'bots' ? t('Dealing…') : t('Practise vs bots')}
-              <span className="font-normal text-fog">· {t('no waiting')}</span>
+          <p className="mt-4 text-sm text-fog">{t('No sign-up. Share the link and play.')}</p>
+
+          <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fog">
+            <span>{t('Just want to try it?')}</span>
+            <button className="inline-flex items-center gap-1.5 font-semibold text-mist transition hover:text-white disabled:opacity-40" disabled={!connected || !!busy} onClick={() => quick(true)}>
+              <IconBot size={15} /> {busy === 'bots' ? t('Dealing…') : t('Play the bots')}
             </button>
-            <button className="btn btn-ghost btn-sm" disabled={!connected || !!busy} onClick={() => quick(false)}>
-              <IconGlobe size={15} /> {busy === 'online' ? t('Finding…') : t('Match with strangers')}
-              <span className="font-normal text-fog">· {t('starts in 20s')}</span>
+            <span className="text-white/15" aria-hidden>·</span>
+            <button className="inline-flex items-center gap-1.5 font-semibold text-mist transition hover:text-white disabled:opacity-40" disabled={!connected || !!busy} onClick={() => quick(false)}>
+              <IconGlobe size={15} /> {busy === 'online' ? t('Finding…') : t('Quick match')}
             </button>
           </div>
           {!connected && <p className="mt-3 text-sm text-fog">{t('Connecting to the game server…')}</p>}
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
+        <motion.div className="md:justify-self-end" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
           <HeroArt />
         </motion.div>
       </section>
@@ -161,7 +151,7 @@ export function Home() {
         <AdSlot slot="banner" className="my-6" />
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pt-6">
+      <section className="mx-auto max-w-6xl px-4 pt-16">
         <div className="eyebrow">{t('How it works')}</div>
         <h2 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-4xl">{t('Easy to learn. Painful to lose.')}</h2>
         <div className="mt-6 grid gap-4 md:grid-cols-3">

@@ -52,15 +52,15 @@ export function HeroScene() {
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[580px] select-none"
-      style={{ '--hw': 'clamp(30px, min(10.5vw, calc((100dvh - 180px) / 6.8)), 68px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
+      className="relative mx-auto w-full max-w-[520px] select-none"
+      style={{ '--hw': 'clamp(28px, min(9.5vw, calc((100dvh - 200px) / 7.2)), 60px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
       aria-label={t('A sixth card lands on a full row and the player takes all five cards')}
       role="img"
     >
-      <div className="absolute inset-[10%] -z-10 rounded-full bg-bull/25 blur-3xl" />
+      <div className="absolute inset-[15%] -z-10 rounded-full bg-bull/10 blur-3xl" />
 
       <motion.div
-        className="felt relative rounded-[1.6rem] p-3 sm:p-4"
+        className="felt relative rounded-[1.4rem] !border-white/5 p-3 !shadow-[inset_0_2px_24px_rgb(0_0_0/0.3)] sm:p-4"
         animate={phase === 'land' ? { x: [0, -5, 5, -3, 2, 0], y: [0, 2, -2, 1, 0] } : { x: 0, y: 0 }}
         transition={{ duration: 0.38 }}
       >
@@ -80,12 +80,12 @@ export function HeroScene() {
               >
                 <div
                   className={
-                    'flex w-[calc(var(--hw)*0.72)] shrink-0 flex-col items-center justify-center rounded-lg py-1 transition-colors ' +
-                    (danger && (tense || exploded) ? 'bg-bull text-white' : 'bg-black/25 text-mist')
+                    'flex w-[calc(var(--hw)*0.56)] shrink-0 flex-col items-center justify-center rounded-md py-0.5 transition-colors ' +
+                    (danger && (tense || exploded) ? 'bg-bull text-white' : 'bg-black/20 text-fog')
                   }
                 >
-                  <Bullhead size={12} className={danger && (tense || exploded) ? 'text-white' : 'text-fog'} />
-                  <span className="font-display text-xs font-bold tabular">{danger ? PENALTY : rowPenalty(row)}</span>
+                  <Bullhead size={10} className={danger && (tense || exploded) ? 'text-white' : 'text-fog/70'} />
+                  <span className="font-display text-[10px] font-bold tabular">{danger ? PENALTY : rowPenalty(row)}</span>
                 </div>
 
                 {Array.from({ length: 6 }, (_, i) => {
@@ -113,12 +113,12 @@ export function HeroScene() {
                       key={`slot-${i}`}
                       className={
                         'relative shrink-0 rounded-[calc(var(--hw)*0.12)] border-[1.5px] border-dashed ' +
-                        (sixth && danger ? 'border-bull/70 bg-bull/10' : 'border-white/10')
+                        (sixth && danger ? 'border-bull/60 bg-bull/8' : 'border-white/[0.05]')
                       }
                       style={{ width: 'var(--hw)', height: 'calc(var(--hw) * 1.4)' }}
                     >
                       {sixth && (
-                        <span className={'absolute inset-0 grid place-items-center font-display text-[calc(var(--hw)*0.36)] font-extrabold ' + (danger ? 'text-bull/70' : 'text-bull/25')}>6</span>
+                        <span className={'absolute inset-0 grid place-items-center font-display text-[calc(var(--hw)*0.36)] font-extrabold ' + (danger ? 'text-bull/60' : 'text-white/[0.06]')}>6</span>
                       )}
                       {sixth && danger && (
                         <motion.div
@@ -145,7 +145,7 @@ export function HeroScene() {
                                   : { duration: 0.4 }
                           }
                         >
-                          <GameCard card={INCOMING} width="var(--hw)" style={{ boxShadow: '0 0 0 3px #f5b942, 0 16px 30px -8px rgb(0 0 0 / .6)' }} />
+                          <GameCard card={INCOMING} width="var(--hw)" style={{ boxShadow: '0 0 0 2px #f5b942, 0 10px 20px -8px rgb(0 0 0 / .5)' }} />
                         </motion.div>
                       )}
                     </div>
@@ -175,11 +175,11 @@ export function HeroScene() {
       </motion.div>
 
       {/* the payoff: the row lands on "your" score and the bull can't hide its grin */}
-      <div className="absolute -bottom-9 left-3 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-ink-900/95 py-1.5 pl-1.5 pr-3 shadow-xl">
-        <BullMark size={30} mood={exploded ? 'shock' : 'neutral'} />
+      <div className="relative z-20 mt-3 ml-1 inline-flex items-center gap-2 rounded-xl border border-white/8 bg-ink-900/80 py-1 pl-1 pr-3">
+        <BullMark size={26} mood={exploded ? 'shock' : 'neutral'} />
         <span className="leading-tight">
           <span className="block text-xs font-semibold text-mist">{t('You')}</span>
-          <span className="flex items-center gap-1 font-display text-lg font-extrabold tabular text-white">
+          <span className="flex items-center gap-1 font-display text-base font-extrabold tabular text-white">
             <Bullhead size={13} className="text-bull" />
             <AnimatedNumber value={exploded ? SCORE_BEFORE + PENALTY : SCORE_BEFORE} delay={exploded ? 1.05 : 0} />
           </span>

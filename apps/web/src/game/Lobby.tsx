@@ -81,7 +81,7 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
               ]
             : [
                 { label: t('Invite friends with the link'), done: humans > 1 || copied },
-                { label: t('{h} people, {b} bots seated', { h: humans, b: bots }), done: room.players.length >= MIN_PLAYERS },
+                { label: t('{h} seated, {b} bots', { h: humans, b: bots }), done: room.players.length >= MIN_PLAYERS },
                 { label: isHost ? t('You press “Deal the cards”') : t('{name} starts the game', { name: hostName }), done: false },
               ]
         }

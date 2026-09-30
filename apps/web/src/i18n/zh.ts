@@ -434,4 +434,12 @@ export const zh: Record<string, string> = {
   'You already have Plus.': '你已經擁有 Plus 了。',
   'Bad request': '請求錯誤',
   'Not your session': '這不是你的結帳紀錄',
+  // home hero, quieter pass
+  '2–10 players. Five minutes to learn. The grudges start next round.': '2–10 人，五分鐘學會，下一局開始記仇。',
+  'Enter a code': '輸入房號',
+  'No sign-up. Share the link and play.': '不用註冊，分享連結就能開玩。',
+  'Just want to try it?': '想先試試？',
+  'Play the bots': '和電腦玩',
+  'Quick match': '快速配對',
+  '{h} seated, {b} bots': '已入座：{h} 人、{b} 電腦',
 };
