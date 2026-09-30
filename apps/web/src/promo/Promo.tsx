@@ -42,7 +42,7 @@ const COPY = {
   en: {
     safe: ["CAN'T", 'LOSE.'],
     friends: ['YOUR', 'FRIENDS:'],
-    math: ['SO MUCH', 'FOR MATH.'],
+    math: ['YOU WERE', 'SAYING?'],
     slots: ['3RD ✓', '4TH', '5TH', '6TH'],
     you: 'YOU',
     again: 'ONE MORE ROUND.',
@@ -53,7 +53,7 @@ const COPY = {
   zh: {
     safe: ['穩贏。'],
     friends: ['你的朋友：'],
-    math: ['算到', '自己了。'],
+    math: ['你剛說', '穩贏？'],
     slots: ['第 3 張 ✓', '第 4 張', '第 5 張', '第 6 張'],
     you: '你',
     again: '再一局。',
@@ -78,6 +78,11 @@ const friendC = (k: number): Pt => ({ x: FRIEND_X[k], y: 256 });
 const BULL: Pt = { x: 150, y: 740 };
 const BULL_SIZE = 108;
 const LOGO: Pt = { x: 270, y: 236 };
+/** Opening close-up composition (its own layout, not a zoom of the table). */
+const CU_BULL: Pt = { x: 178, y: 560 };
+const CU_BULL_SCALE = 1.8;
+const CU_CARD: Pt = { x: 372, y: 572 };
+const cuMix = (t: number) => 1 - inOut(prog(t, 1.5, 1.78));
 const LOGO_SIZE = 176;
 const FRIENDS = [
   { name: 'MAYA', avatar: 'daisy', card: 44, flip: 3.0, land: 4.75, slot: 2 },
@@ -185,7 +190,9 @@ function friendCard(k: number, t: number): Pose | null {
 function yourCard(t: number): Pose {
   const bob = t < 1.5 ? Math.sin(t * Math.PI * 2) * 3 : 0;
   const keys: Key[] = [
-    { t: 0, ...HAND, w: 104, r: -3 },
+    { t: 0, ...CU_CARD, w: 168, r: -4 },
+    { t: 1.5, ...CU_CARD, w: 168, r: -4 },
+    { t: 1.78, ...HAND, w: 104, r: -3, ease: inOut },
     { t: 2.1, ...HAND, w: 104, r: -3 },
     { t: 2.35, ...STAGED, w: 84, r: -5, ease: outBack },
     { t: 5.0, ...STAGED, w: 84, r: -5 },
@@ -302,14 +309,17 @@ function You({ t }: { t: number }) {
   const pop = t >= BURST ? outBack(prog(t, BURST, BURST + 0.15), 2.4) : 0;
   const score = HEADS.filter((_, k) => t >= headArrive(k)).length;
   const scorePop = HEADS.reduce((m, _, k) => Math.max(m, hit(t, headArrive(k), 0.12)), 0);
+  const cu = cuMix(t);
+  const at = { x: lerp(BULL.x, CU_BULL.x, cu), y: lerp(BULL.y, CU_BULL.y, cu) };
+  const big = lerp(1, CU_BULL_SCALE, cu);
   return (
     <div className="absolute inset-0 z-20">
       <div
         className="absolute"
         style={{
-          left: BULL.x - BULL_SIZE / 2,
-          top: BULL.y - BULL_SIZE / 2 + sink - pop * 40,
-          transform: `translateX(${look * 8}px) rotate(${look * 14 + wiggle + hits * -8}deg) scale(${1 + nod + hits * 0.1 + pop * 0.25}, ${1 + nod - hits * 0.14 + pop * 0.25})`,
+          left: at.x - BULL_SIZE / 2,
+          top: at.y - BULL_SIZE / 2 + sink - pop * 40,
+          transform: `translateX(${look * 8}px) rotate(${look * 14 + wiggle + hits * -8}deg) scale(${big * (1 + nod + hits * 0.1 + pop * 0.25)}, ${big * (1 + nod - hits * 0.14 + pop * 0.25)})`,
           transformOrigin: '50% 90%',
         }}
       >
@@ -322,7 +332,7 @@ function You({ t }: { t: number }) {
           top: BULL.y + 64,
           borderColor: t >= 6.5 ? RED : 'rgba(255,255,255,.12)',
           background: t >= 6.5 ? 'rgba(229,72,77,.22)' : 'rgba(21,24,29,.92)',
-          opacity: 1 - prog(t, BURST, BURST + 0.15),
+          opacity: (1 - prog(t, BURST, BURST + 0.15)) * (1 - cu),
           transform: `scale(${1 + scorePop * 0.18 + hit(t, 7.0, 0.3) * 0.35})`,
         }}
       >
@@ -390,6 +400,70 @@ function Friends({ t }: { t: number }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ the two reveal close-ups (own compositions)
+function overlayShake(t: number) {
+  let x = 0;
+  let y = 0;
+  SHAKES.forEach(([at, amp, dur]) => {
+    const k = hit(t, at, dur);
+    if (k) {
+      x += amp * k * Math.sin((t - at) * 83);
+      y += amp * k * Math.cos((t - at) * 71);
+    }
+  });
+  return `translate(${x}px, ${y}px)`;
+}
+
+function CloseUps({ t }: { t: number }) {
+  if (t < 3.84 || t >= 4.75) return null;
+  const bg = 'radial-gradient(70% 50% at 50% 45%, rgba(229,72,77,.22), transparent 70%), #0d0f12';
+  if (t < 4.25) {
+    // 1 · only the 49 and what it does to your card
+    const flip = 1 - inOut(prog(t, 3.84, 4.0));
+    const push = 1 + prog(t, 3.84, 4.25) * 0.05 + hit(t, 4.0, 0.2) * 0.08;
+    const after = t >= 4.0;
+    const jump = outBack(prog(t, 4.0, 4.16), 2.4);
+    return (
+      <div className="absolute inset-0 z-[55]" style={{ background: bg }}>
+        <div className="absolute inset-0" style={{ transform: overlayShake(t) }}>
+          <div className="absolute inset-x-0 flex justify-center" style={{ top: 150 }}>
+            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-ink-900/90 py-1 pl-1 pr-4">
+              <Avatar id={FRIENDS[2].avatar} size={34} />
+              <span className="text-[17px] font-extrabold tracking-wide">{FRIENDS[2].name}</span>
+            </span>
+          </div>
+          <div className="absolute" style={{ left: 270, top: 395, transform: `translate(-50%, -50%) scale(${push})` }}>
+            <CardView pose={{ x: 110, y: 154, w: 220, flip }} value={49} />
+            <div style={{ width: 220, height: 308 }} />
+          </div>
+          <div className="absolute inset-x-0 flex items-center justify-center gap-4 font-display font-extrabold" style={{ top: 612 }}>
+            <span className="rounded-full px-4 py-1 text-[34px] text-ink-950" style={{ background: SLOT_COLORS[2], opacity: after ? 0.35 : 1, transform: `scale(${after ? 0.8 : 1})` }}>
+              {COPY.slots[2]}
+            </span>
+            {after && (
+              <>
+                <span className="text-[34px] text-mist" style={{ opacity: jump }}>→</span>
+                <span className="rounded-full px-5 py-1.5 text-[46px] text-white" style={{ background: RED, transform: `scale(${jump})`, boxShadow: '0 0 40px rgba(229,72,77,.7)' }}>
+                  {COPY.slots[3]}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // 2 · your face, nothing else
+  const k = prog(t, 4.25, 4.75);
+  return (
+    <div className="absolute inset-0 z-[55]" style={{ background: bg }}>
+      <div className="absolute" style={{ left: 270, top: 470, transform: `${overlayShake(t)} translate(-50%, -50%) scale(${1 + k * 0.07}) rotate(${Math.sin(t * 50) * 1.5}deg)` }}>
+        <BullMark size={330} mood="shock" />
+      </div>
     </div>
   );
 }
@@ -470,24 +544,12 @@ const SHAKES: [number, number, number][] = [
 function camera(t: number) {
   let s = 1;
   let f: Pt = { x: 270, y: 560 };
-  if (t < 1.5) {
-    // confident close-up: your card and your bull fill the frame
-    s = 1.62 + t * 0.03;
-    f = { x: 236, y: 790 };
-  } else if (t < 1.75) {
-    s = lerp(1.66, 1, outCubic(prog(t, 1.5, 1.75)));
-    f = { x: lerp(236, 270, prog(t, 1.5, 1.75)), y: lerp(790, 560, prog(t, 1.5, 1.75)) };
-  } else if (t < 3.84) {
+  if (t < 3.84) {
     s = 1 + outBack(prog(t, 3.0, 3.16), 1.6) * 0.04 + outBack(prog(t, 3.5, 3.66), 1.6) * 0.04;
     f = { x: 300, y: 540 };
-  } else if (t < 4.25) {
-    // hard cut: extreme close-up on the 49 turning over
-    s = 2.3 + prog(t, 3.84, 4.25) * 0.15;
-    f = friendC(2);
   } else if (t < 4.75) {
-    // hard cut: your eyes
-    s = 2.7 + prog(t, 4.25, 4.75) * 0.12;
-    f = { x: BULL.x + 6, y: BULL.y - 8 };
+    s = 1.08;
+    f = { x: 300, y: 540 };
   } else if (t < SLAM + 0.15) {
     // hard cut back to wide, drifting toward the hanging card
     s = 1 + inOut(prog(t, 5.0, 5.9)) * 0.08 + hit(t, SLAM, 0.3) * 0.06;
@@ -528,19 +590,22 @@ export function PromoStage({ t }: { t: number }) {
   const mine = yourCard(t);
   const calmBg = t < 4 ? 'rgba(74,222,155,.08)' : `rgba(229,72,77,${0.12 + prog(t, 4, 6) * 0.12})`;
   const tableFade = 1 - prog(t, BURST, BURST + 0.3);
+  const cu = cuMix(t);
   return (
     <div className="relative overflow-hidden" style={{ width: SW, height: SH, background: '#0d0f12' }}>
       <div className="absolute inset-0" style={{ background: `radial-gradient(90% 55% at 50% 50%, ${calmBg}, transparent 70%)` }} />
       <div className="absolute inset-0" style={{ transform: camera(t), transformOrigin: '0 0' }}>
-        <div className="felt absolute rounded-[26px]" style={{ left: 14, top: 400, width: 512, height: 140, opacity: tableFade }} />
-        {[2, 3, 4, 5].map((i) => (
-          <div key={i} className="absolute rounded-[10px] border border-dashed border-white/[0.06]" style={{ left: slotC(i).x - W / 2, top: slotC(i).y - W * 0.7, width: W, height: W * 1.4, opacity: tableFade }} />
-        ))}
+        <div style={cu > 0 ? { opacity: lerp(1, 0.28, cu), filter: `blur(${cu * 3}px)` } : undefined}>
+          <div className="felt absolute rounded-[26px]" style={{ left: 14, top: 400, width: 512, height: 140, opacity: tableFade }} />
+          {[2, 3, 4, 5].map((i) => (
+            <div key={i} className="absolute rounded-[10px] border border-dashed border-white/[0.06]" style={{ left: slotC(i).x - W / 2, top: slotC(i).y - W * 0.7, width: W, height: W * 1.4, opacity: tableFade }} />
+          ))}
+          {[0, 1].map((i) => (
+            <CardView key={i} pose={rowCard(i, t)} value={ROW[i]} z={30 + i} />
+          ))}
+        </div>
         <Projection t={t} from={mine} />
         <You t={t} />
-        {[0, 1].map((i) => (
-          <CardView key={i} pose={rowCard(i, t)} value={ROW[i]} z={30 + i} />
-        ))}
         {FRIENDS.map((f, k) => {
           const pose = friendCard(k, t);
           return pose && <CardView key={f.card} pose={pose} value={f.card} z={t >= hitAt(f.slot) - 0.28 ? 30 + f.slot : 2 + k} />;
@@ -550,6 +615,7 @@ export function PromoStage({ t }: { t: number }) {
         <Friends t={t} />
         <Captions t={t} cam />
       </div>
+      <CloseUps t={t} />
       <Captions t={t} />
       <EndCard t={t} />
       <Flashes t={t} />
