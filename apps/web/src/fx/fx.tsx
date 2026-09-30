@@ -24,7 +24,8 @@ export interface RectCard {
 }
 
 type Effect =
-  | { id: number; kind: 'cards'; cards: RectCard[]; to: DOMRect; theme: string; glow: string }
+  | { id: number; kind: 'cards'; cards: RectCard[]; to: DOMRect; theme: string }
+  | { id: number; kind: 'token'; from: DOMRect; to: DOMRect; text: string; big: boolean }
   | { id: number; kind: 'burst'; x: number; y: number; text: string; color: string; big: boolean }
   | { id: number; kind: 'particles'; x: number; y: number; colors: string[]; count: number; spread: number; shape: 'dot' | 'bull' | 'star' }
   | { id: number; kind: 'emoji'; x: number; y: number; emoji: string; image: string | null };
@@ -54,9 +55,14 @@ const center = (r: DOMRect) => ({ x: r.left + r.width / 2, y: r.top + r.height /
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export const fx = {
-  flyCards(cards: RectCard[], to: DOMRect, theme: string, glow: string) {
+  /** Swept cards travel into a player's chip — the whole row physically goes to whoever took it. */
+  flyCards(cards: RectCard[], to: DOMRect, theme: string) {
     if (!cards.length || reduced()) return;
-    add({ kind: 'cards', cards, to, theme, glow }, 1400);
+    add({ kind: 'cards', cards, to, theme }, 1400);
+  },
+  /** The penalty count rides from the row to the player's score. */
+  token(from: DOMRect, to: DOMRect, text: string, big = false, delay = 0) {
+    add({ kind: 'token', from, to, text, big }, 1300, delay);
   },
   burst(at: DOMRect, text: string, color: string, big = false, delay = 0) {
     const c = center(at);
@@ -94,6 +100,8 @@ export function FxLayer() {
         switch (e.kind) {
           case 'cards':
             return <FlyingCards key={e.id} effect={e} />;
+          case 'token':
+            return <Token key={e.id} effect={e} />;
           case 'burst':
             return <Burst key={e.id} effect={e} />;
           case 'particles':
@@ -117,7 +125,7 @@ function FlyingCards({ effect }: { effect: Extract<Effect, { kind: 'cards' }> })
           <motion.div
             key={card.value}
             className="absolute"
-            style={{ left: rect.left, top: rect.top, width: rect.width, filter: `drop-shadow(0 0 10px ${effect.glow})` }}
+            style={{ left: rect.left, top: rect.top, width: rect.width, filter: 'drop-shadow(0 10px 12px rgb(0 0 0 / .45))' }}
             initial={{ x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 }}
             animate={{
               x: [0, (target.x - from.x) * 0.35, target.x - from.x],
@@ -133,6 +141,32 @@ function FlyingCards({ effect }: { effect: Extract<Effect, { kind: 'cards' }> })
         );
       })}
     </>
+  );
+}
+
+function Token({ effect }: { effect: Extract<Effect, { kind: 'token' }> }) {
+  const from = center(effect.from);
+  const to = center(effect.to);
+  return (
+    <motion.div
+      className="absolute"
+      style={{ left: from.x, top: from.y }}
+      initial={{ x: '-50%', y: '-50%', scale: 0.6, opacity: 0 }}
+      animate={{
+        x: ['-50%', `calc(-50% + ${(to.x - from.x) * 0.5}px)`, `calc(-50% + ${to.x - from.x}px)`],
+        y: ['-50%', `calc(-50% + ${(to.y - from.y) * 0.5 - 70}px)`, `calc(-50% + ${to.y - from.y}px)`],
+        scale: [0.6, effect.big ? 1.45 : 1.2, 0.7],
+        opacity: [0, 1, 1],
+      }}
+      transition={{ duration: 0.8, ease: [0.45, 0, 0.55, 1], times: [0, 0.45, 1] }}
+    >
+      <span
+        className="flex items-center gap-1 whitespace-nowrap rounded-full bg-bull px-3 py-1 font-display font-extrabold text-white"
+        style={{ fontSize: effect.big ? 24 : 18, boxShadow: '0 4px 0 #8e1f27, 0 12px 20px -8px rgb(0 0 0 / .6)' }}
+      >
+        {effect.text} <Bullhead size={effect.big ? 20 : 15} />
+      </span>
+    </motion.div>
   );
 }
 

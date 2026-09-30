@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, useRef, useState, type MutableRefObject } from 'react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import clsx from 'clsx';
@@ -34,10 +34,21 @@ export function GameOver({
   const iWon = !!result && !!self.playerId && result.winnerIds.includes(self.playerId);
   const celebrated = useRef(false);
   const t = useT();
+  // Two-second "moment" first: bullheads rain onto everyone's pile, then the results panel.
+  const [stage, setStage] = useState<'drop' | 'panel'>('drop');
 
   useEffect(() => {
     if (!result) {
-      celebrated.current = false;
+      setStage('drop');
+      return;
+    }
+    const timer = window.setTimeout(() => setStage('panel'), DROP_MS);
+    return () => window.clearTimeout(timer);
+  }, [result]);
+
+  useEffect(() => {
+    if (!result || stage !== 'panel') {
+      if (!result) celebrated.current = false;
       return;
     }
     if (celebrated.current) return;
@@ -49,9 +60,10 @@ export function GameOver({
       setTimeout(() => confetti({ particleCount: 60, angle: 60, spread: 60, origin: { x: 0, y: 0.6 }, colors }), 250);
       setTimeout(() => confetti({ particleCount: 60, angle: 120, spread: 60, origin: { x: 1, y: 0.6 }, colors }), 400);
     } else if (self.playerId) sound.play('lose');
-  }, [result, iWon, self.playerId]);
+  }, [result, stage, iWon, self.playerId]);
 
   if (!result) return null;
+  if (stage === 'drop') return <ScoreDrop standings={result.standings} selfId={self.playerId} onSkip={() => setStage('panel')} />;
   const winner = result.standings[0];
   const myStanding = result.standings.find((s) => s.playerId === self.playerId);
   const iLost = !!myStanding && myStanding.rank === Math.max(...result.standings.map((s) => s.rank)) && result.standings.length > 1;
@@ -211,5 +223,102 @@ function GameStats({ standings, selfId }: { standings: import('@take6/shared').S
         </motion.div>
       ))}
     </div>
+  );
+}
+
+const DROP_MS = 2600;
+
+/**
+ * The end-of-game moment: every player's bullheads fall from above onto their pile and the
+ * count ticks up with them. The biggest pile overflows and spills its heads everywhere.
+ */
+function ScoreDrop({ standings, selfId, onSkip }: { standings: import('@take6/shared').Standing[]; selfId: string | null; onSkip: () => void }) {
+  const t = useT();
+  const max = Math.max(...standings.map((s) => s.score));
+  const worst = standings.length > 1 && max > 0 ? standings.find((s) => s.score === max)?.playerId : null;
+  const COLS = 4;
+  const CAP = 28;
+
+  useEffect(() => {
+    const ticks = [0, 250, 500, 750, 1000, 1250].map((ms, i) => window.setTimeout(() => sound.play('deal', i), ms + 200));
+    const spill = worst ? window.setTimeout(() => sound.play('take', max), 1500) : 0;
+    return () => {
+      ticks.forEach(window.clearTimeout);
+      window.clearTimeout(spill);
+    };
+  }, [worst, max]);
+
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 grid cursor-pointer place-items-center bg-ink-950/80 px-4 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      onClick={onSkip}
+      role="dialog"
+      aria-label={t('Game over')}
+    >
+      <div className="flex max-w-full items-end justify-center gap-3 overflow-hidden sm:gap-6">
+        {standings.map((s, col) => {
+          const n = Math.min(s.score, CAP);
+          const spills = s.playerId === worst;
+          return (
+            <div key={s.playerId} className="relative flex w-[clamp(56px,18vw,96px)] flex-col items-center">
+              <div className="relative h-[180px] w-full sm:h-[220px]">
+                {Array.from({ length: n }, (_, i) => {
+                  const row = Math.floor(i / COLS);
+                  const c = i % COLS;
+                  return (
+                    <motion.span
+                      key={i}
+                      className="absolute text-bull"
+                      style={{ left: `${c * 25 + 2}%`, bottom: row * 15 }}
+                      initial={{ y: -420, rotate: (i % 5) * 30 - 60, opacity: 0 }}
+                      animate={{ y: 0, rotate: (i % 3) * 8 - 8, opacity: 1 }}
+                      transition={{ delay: 0.15 + col * 0.06 + i * 0.035, type: 'spring', stiffness: 520, damping: 22 }}
+                    >
+                      <Bullhead size={18} />
+                    </motion.span>
+                  );
+                })}
+                {spills &&
+                  Array.from({ length: 16 }, (_, i) => {
+                    const dir = i % 2 ? 1 : -1;
+                    return (
+                      <motion.span
+                        key={`spill-${i}`}
+                        className="absolute bottom-[40%] left-1/2 text-bull"
+                        initial={{ x: 0, y: 0, opacity: 0, rotate: 0 }}
+                        animate={{
+                          x: [0, dir * (30 + (i % 4) * 26), dir * (60 + (i % 4) * 48)],
+                          y: [0, -110 - (i % 5) * 26, 120 + (i % 3) * 30],
+                          rotate: dir * (180 + i * 30),
+                          opacity: [0, 1, 1, 0],
+                        }}
+                        transition={{ delay: 1.45 + (i % 6) * 0.03, duration: 1.05, ease: [0.2, 0.7, 0.6, 1] }}
+                      >
+                        <Bullhead size={16 + (i % 3) * 4} />
+                      </motion.span>
+                    );
+                  })}
+              </div>
+              <motion.div
+                className={clsx('mt-2 font-display text-2xl font-extrabold tabular sm:text-3xl', spills ? 'text-bull' : s.rank === 1 ? 'text-hay' : 'text-white')}
+                animate={spills ? { scale: [1, 1, 1.35, 1] } : s.rank === 1 ? { y: [0, 0, -10, 0] } : undefined}
+                transition={{ duration: 0.6, delay: 1.45 }}
+              >
+                <AnimatedNumber value={s.score} from={0} delay={0.25 + col * 0.06} />
+              </motion.div>
+              <Avatar id={s.avatar} size={40} ring={s.rank === 1 ? '#f5b942' : undefined} className="mt-1" />
+              <div className="mt-1 max-w-full truncate text-xs font-semibold text-mist">{s.playerId === selfId ? t('You') : s.name}</div>
+              {s.rank === 1 && (
+                <motion.span className="absolute -top-2 text-2xl" initial={{ scale: 0, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ delay: 1.7, type: 'spring', stiffness: 500, damping: 14 }}>
+                  👑
+                </motion.span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
   );
 }

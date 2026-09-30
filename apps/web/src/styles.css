@@ -42,9 +42,15 @@
   :root {
     color-scheme: dark;
     /* Card size scales with the viewport so six cards always fit across a row. */
-    --card-w: clamp(36px, min(calc((100vw - 96px) / 6.9), calc((100dvh - 480px) / 6.8)), 84px);
+    /* Board cards are sized from whichever runs out first: width (7 columns) or height (lane + 4 rows). */
+    --card-w: clamp(36px, min(calc((100vw - 90px) / 7.3), calc((100dvh - 370px) / 7.4)), 112px);
     --card-h: calc(var(--card-w) * 1.4);
-    --hand-w: clamp(50px, min(calc((100vw - 32px) / 7.2), calc(100dvh / 9.5)), 96px);
+    --hand-w: clamp(46px, min(calc((100vw - 32px) / 8.2), calc(100dvh / 12.5)), 80px);
+  }
+
+  /* Wide screens put the players in the top bar, so the board gets that height too. */
+  @media (min-width: 1024px) {
+    :root { --card-w: clamp(36px, min(calc((100vw - 90px) / 7.3), calc((100dvh - 312px) / 7.4)), 112px); }
   }
 
   html, body, #root {
@@ -387,6 +393,7 @@
   .blobs > span:nth-child(1) { width: 42vmax; height: 42vmax; left: -12vmax; top: -14vmax; background: #e5484d; }
   .blobs > span:nth-child(2) { width: 36vmax; height: 36vmax; right: -10vmax; top: 10vmax; background: #5ac8fa; animation-delay: -6s; }
   .blobs > span:nth-child(3) { width: 34vmax; height: 34vmax; left: 20vmax; bottom: -18vmax; background: #f5b942; animation-delay: -12s; }
+  .blobs-calm > span { opacity: 0.1; filter: blur(90px) saturate(0.6); animation-duration: 36s; }
   .blobs > span:nth-child(4) { width: 26vmax; height: 26vmax; right: 18vmax; bottom: -8vmax; background: #9b8cff; animation-delay: -3s; }
 
   /* 3D flip used when cards are revealed. */

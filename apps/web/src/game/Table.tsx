@@ -29,6 +29,12 @@ import { colorFor } from './colors';
 
 const feltArt = artUrl('texture-felt');
 
+/** Choreography of a take: the sixth card slams in, then the old row is swept to the taker. */
+const SLAM_MS = 380;
+const SWEEP_MS = 420;
+/** When the swept penalty lands on the taker's score. */
+const SCORE_LANDS_S = (SLAM_MS + 150 + 800) / 1000;
+
 interface Props {
   snapshot: RoomSnapshot;
   emotes: EmoteBubble[];
@@ -46,6 +52,7 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
   const colorOf = useMemo(() => new Map(room.players.map((p, i) => [p.id, colorFor(i)])), [room.players]);
   const secondsLeft = useCountdown(room.deadline, clockOffset);
   const theme = session.cardTheme;
+  const wide = useIsWide();
 
   const choosing = room.phase === 'choosingRow' ? byId.get(room.choosingPlayerId ?? '') : undefined;
   const iMustChoose = !!choosing && choosing.id === self.playerId;
@@ -53,9 +60,12 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
   const current = room.resolvingIndex !== null ? room.played[room.resolvingIndex] : undefined;
   const danger = room.lastEvent?.type === 'danger' && room.phase === 'resolving' ? room.lastEvent : null;
   const landed = room.lastEvent?.type === 'place' ? room.lastEvent : null;
+  const take = room.lastEvent?.type === 'take' ? room.lastEvent : null;
+  // My card leaves the hand the moment I play it and waits face-up in the staging lane.
+  const myPending = room.phase === 'selecting' && self.selected !== null ? self.hand.find((c) => c.value === self.selected) ?? null : null;
   const dealing = room.lastEvent?.type === 'deal' && room.turn === 1 && self.hand.length === HAND_SIZE;
 
-  useTableFeedback(snapshot, secondsLeft, theme, colorOf, emotes);
+  useTableFeedback(snapshot, secondsLeft, emotes);
 
   const leave = () => {
     const live = room.phase !== 'gameEnd';
@@ -65,16 +75,29 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
 
   return (
     <div className="relative flex h-[100dvh] flex-col overflow-hidden">
-      <div className="blobs" aria-hidden="true">
+      {/* In a game the table is the star: the backdrop stays quiet and only flares when a row gets swallowed. */}
+      <div className="blobs blobs-calm" aria-hidden="true">
         <span />
         <span />
         <span />
         <span />
       </div>
+      <AnimatePresence>
+        {take && take.penalty > 0 && (
+          <motion.div
+            key={take.id}
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 z-0 bg-bull"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, take.penalty >= 7 ? 0.22 : 0.12, 0] }}
+            transition={{ duration: 0.8, delay: 0.38, times: [0, 0.2, 1] }}
+          />
+        )}
+      </AnimatePresence>
 
       <div id="shake-root" className="relative z-10 flex min-h-0 flex-1 flex-col">
         {/* ---------------------------------------------------------- top bar */}
-        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/6 bg-ink-950/40 px-3 backdrop-blur sm:px-4">
+        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/6 bg-ink-950/40 px-3 backdrop-blur sm:px-4 lg:h-16">
           <button className="btn btn-ghost btn-sm !px-2.5" onClick={leave} aria-label={t('Leave table')}>
             <IconLogOut size={17} className="rotate-180" />
           </button>
@@ -85,8 +108,14 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
               {room.settings.mode === 'classic' && ` · ${t('Hand {n}', { n: room.handNumber })}`}
             </div>
           </div>
-          <TurnProgress turn={room.turn} />
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+          {wide ? (
+            <div className="min-w-0 flex-1">
+              <PlayersBar snapshot={snapshot} emotes={emotes} colorOf={colorOf} />
+            </div>
+          ) : (
+            <TurnProgress turn={room.turn} />
+          )}
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             {secondsLeft !== null && (room.phase === 'selecting' || room.phase === 'choosingRow') && (
               <TimerPill
                 seconds={secondsLeft}
@@ -100,17 +129,16 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
           </div>
         </div>
 
-        <PlayersBar snapshot={snapshot} emotes={emotes} colorOf={colorOf} />
+        {!wide && <PlayersBar snapshot={snapshot} emotes={emotes} colorOf={colorOf} />}
 
         <LayoutGroup>
-          <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center-safe gap-3 overflow-y-auto px-2 py-2 sm:px-4">
-            <PlayedTray snapshot={snapshot} byId={byId} colorOf={colorOf} />
-
+          <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center-safe gap-2 overflow-y-auto px-2 py-1.5 sm:px-4">
             <div
-              className="felt relative rounded-[1.6rem] p-2.5 sm:p-4"
+              className="felt relative rounded-[1.8rem] px-2.5 pb-3 pt-2 sm:px-5 sm:pb-5 sm:pt-3"
               style={feltArt ? ({ '--felt-art': `url(${feltArt})` } as CSSProperties) : undefined}
             >
-              <div className="flex flex-col gap-[6px] sm:gap-2">
+              <PlayedTray snapshot={snapshot} byId={byId} colorOf={colorOf} myPending={myPending} hidden={danger ? danger.card.value : null} />
+              <div className="flex flex-col gap-[calc(var(--card-w)*0.09)]">
                 {room.rows.map((row, r) => (
                   <BoardRow
                     key={r}
@@ -118,9 +146,10 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
                     cards={row.cards}
                     theme={theme}
                     selectable={iMustChoose}
-                    danger={danger?.row === r}
+                    danger={danger?.row === r ? danger.card : null}
+                    dim={!!danger && danger.row !== r}
                     landedValue={landed?.row === r ? landed.card.value : null}
-                    flash={room.lastEvent?.type === 'take' && room.lastEvent.row === r ? room.lastEvent.id : null}
+                    take={take?.row === r ? take : null}
                     target={
                       room.phase === 'resolving' && !!current && !danger && findTargetRow(current.card, room.rows) === r && landed?.card.value !== current.card.value
                     }
@@ -165,15 +194,22 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
   );
 }
 
+/** Only one PlayersBar may exist at a time: its chips are the anchors effects fly to. */
+function useIsWide() {
+  const query = '(min-width: 1024px)';
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setWide(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return wide;
+}
+
 // ------------------------------------------------------------------ feedback (sound, haptics, fx)
 
-function useTableFeedback(
-  snapshot: RoomSnapshot,
-  secondsLeft: number | null,
-  theme: string,
-  colorOf: Map<string, string>,
-  emotes: EmoteBubble[],
-) {
+function useTableFeedback(snapshot: RoomSnapshot, secondsLeft: number | null, emotes: EmoteBubble[]) {
   const { room, self } = snapshot;
   const lastEvent = useRef<number | null>(room.lastEvent?.id ?? null);
   const lastTurn = useRef(room.turn);
@@ -195,33 +231,21 @@ function useTableFeedback(
     }
     if (e.type === 'place') {
       const slot = room.rows[e.row]?.cards.length ?? 1;
-      setTimeout(() => {
-        sound.play('place', slot);
-        const landedRect = anchors.rows.cur.get(e.row)?.at(-1)?.rect;
-        if (landedRect) fx.particles(landedRect, { colors: ['#fff7ea', colorOf.get(e.playerId) ?? '#f5b942'], count: 8, spread: 36 });
-      }, 260);
+      setTimeout(() => sound.play('place', slot), 240);
     }
     if (e.type === 'danger') {
       sound.play('danger');
       if (mine) haptic([15, 40, 15]);
     }
     if (e.type === 'take') {
-      const chip = anchors.players.get(e.playerId)?.getBoundingClientRect();
-      const taken = (anchors.rows.prev.get(e.row) ?? []).filter((c) => c.card.value !== e.card.value);
-      if (chip && taken.length) fx.flyCards(taken, chip, theme, colorOf.get(e.playerId) ?? '#e5484d');
       const big = e.penalty >= 7;
       setTimeout(() => {
         sound.play('take', e.penalty);
         if (big) sound.play('moo', e.penalty >= 12 ? 0.8 : 1);
-        if (chip && e.penalty > 0) {
-          fx.burst(chip, `+${e.penalty}`, '#e5484d', big);
-          fx.particles(chip, { colors: ['#e5484d', '#ff8a8a', '#fff7ea'], count: big ? 14 : 8, spread: big ? 110 : 70, shape: 'bull' });
-        }
-        if (big) fx.shake(e.penalty >= 12 ? 'hard' : 'soft');
         if (mine) haptic(big ? [60, 40, 90] : 45);
-      }, 480);
+      }, SLAM_MS);
     }
-  }, [room.lastEvent, room.played, room.rows, self.playerId, theme, colorOf]);
+  }, [room.lastEvent, room.played, room.rows, self.playerId]);
 
   useEffect(() => {
     if (room.phase === 'selecting' && room.turn !== lastTurn.current) {
@@ -262,9 +286,10 @@ function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emo
   const t = useT();
   const resolvingId = room.resolvingIndex !== null ? room.played[room.resolvingIndex]?.playerId : null;
   const low = Math.min(...room.players.map((p) => p.score));
+  const takerId = room.lastEvent?.type === 'take' ? room.lastEvent.playerId : null;
 
   return (
-    <div className="no-scrollbar relative flex shrink-0 gap-2 overflow-x-auto px-3 py-2.5 sm:justify-center sm:px-4">
+    <div className="no-scrollbar relative flex shrink-0 gap-2 overflow-x-auto px-3 py-2 sm:justify-center sm:px-4">
       {room.players.map((p) => {
         const color = colorOf.get(p.id)!;
         const thinking = room.phase === 'selecting' && !p.hasPlayed;
@@ -319,7 +344,7 @@ function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emo
                 {p.id === self.playerId ? t('You') : p.name}
               </span>
               <span className={clsx('flex items-center gap-1 text-xs font-bold tabular', leading ? 'text-mint' : 'text-fog')}>
-                <Bullhead size={11} className="text-bull" /> <AnimatedNumber value={p.score} />
+                <Bullhead size={11} className="text-bull" /> <AnimatedNumber value={p.score} delay={p.id === takerId ? SCORE_LANDS_S : 0} />
                 {room.settings.mode === 'classic' && p.handScore > 0 && <span className="font-medium text-fog/70">(+{p.handScore})</span>}
               </span>
             </span>
@@ -348,67 +373,95 @@ function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emo
 
 // ------------------------------------------------------------------ tray
 
-function PlayedTray({ snapshot, byId, colorOf }: { snapshot: RoomSnapshot; byId: Map<string, PublicPlayer>; colorOf: Map<string, string> }) {
+function PlayedTray({
+  snapshot,
+  byId,
+  colorOf,
+  myPending,
+  hidden,
+}: {
+  snapshot: RoomSnapshot;
+  byId: Map<string, PublicPlayer>;
+  colorOf: Map<string, string>;
+  myPending: Card | null;
+  /** A card currently hovering over its row (sixth-card suspense) is drawn there, not here. */
+  hidden: number | null;
+}) {
   const { room, self } = snapshot;
   const t = useT();
   const onBoard = new Set(room.rows.flatMap((r) => r.cards.map((c) => c.value)));
-  const w = 'calc(var(--card-w) * 0.86)';
-  const height = 'h-[calc(var(--card-w)*0.86*1.4+24px)]';
+  const w = 'calc(var(--card-w) * 0.9)';
+  const lane = 'relative mb-[calc(var(--card-w)*0.18)] flex h-[calc(var(--card-w)*0.9*1.4+20px)] items-end justify-center gap-[calc(var(--card-w)*0.1)]';
 
   if (room.phase === 'selecting') {
     const played = room.players.filter((p) => p.hasPlayed);
     return (
-      <div className={clsx('flex items-end justify-center', height)}>
-        <div className="flex -space-x-[calc(var(--card-w)*0.55)]">
-          <AnimatePresence>
-            {played.map((p, i) => (
+      <div className={lane}>
+        {played.length === 0 && <span className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-xs font-semibold text-white/25">{t('Cards land here')}</span>}
+        <AnimatePresence>
+          {played.map((p, i) => {
+            const mine = p.id === self.playerId && myPending;
+            return mine ? (
+              <motion.div
+                key={`card-${myPending.value}`}
+                layoutId={`card-${myPending.value}`}
+                animate={{ y: [0, -4, 0] }}
+                transition={{ layout: { type: 'spring', stiffness: 420, damping: 30 }, y: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' } }}
+                className="relative z-10"
+              >
+                <GameCard card={myPending} width={w} theme={p.cardTheme} style={{ boxShadow: `0 0 0 2px ${colorOf.get(p.id)}, 0 14px 22px -10px rgb(0 0 0 / .7)` }} />
+              </motion.div>
+            ) : (
               <motion.div
                 key={p.id}
-                initial={{ y: 60, opacity: 0, rotate: -20, scale: 0.6 }}
-                animate={{ y: 0, opacity: 1, rotate: (i - played.length / 2) * 5, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ type: 'spring', stiffness: 520, damping: 22 }}
+                initial={{ y: -70, opacity: 0, rotate: -18, scale: 0.7 }}
+                animate={{ y: 0, opacity: 1, rotate: ((i % 3) - 1) * 3, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 520, damping: 24 }}
               >
                 <CardBack width={w} theme={p.cardTheme} />
               </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
+            );
+          })}
+        </AnimatePresence>
       </div>
     );
   }
 
   const revealing = room.phase === 'revealing';
-  const visible = room.played.filter((pc, i) => (room.resolvingIndex === null || i >= room.resolvingIndex) && !onBoard.has(pc.card.value));
+  const visible = room.played.filter(
+    (pc, i) => (room.resolvingIndex === null || i >= room.resolvingIndex) && !onBoard.has(pc.card.value) && pc.card.value !== hidden,
+  );
   return (
-    <div className={clsx('no-scrollbar flex max-w-full items-end gap-1.5 overflow-x-auto px-1 sm:gap-2', height)} style={{ perspective: 800 }}>
+    <div className={clsx(lane, 'no-scrollbar overflow-x-auto')} style={{ perspective: 900 }}>
       <AnimatePresence mode="popLayout">
         {visible.map((pc) => {
           const order = room.played.findIndex((x) => x.card.value === pc.card.value);
           const isCurrent = room.resolvingIndex !== null && room.played[room.resolvingIndex]?.card.value === pc.card.value;
           const owner = byId.get(pc.playerId);
           const color = colorOf.get(pc.playerId) ?? '#fff';
+          const mine = pc.playerId === self.playerId;
           return (
             <motion.div
-              key={pc.card.value}
+              key={`card-${pc.card.value}`}
               layoutId={`card-${pc.card.value}`}
-              exit={{ opacity: 0, scale: 0.8 }}
-              animate={{ y: isCurrent ? -8 : 0, scale: isCurrent ? 1.08 : 1 }}
-              transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+              exit={{ opacity: 0, transition: { duration: 0 } }}
+              animate={{ y: isCurrent ? -10 : 0, scale: isCurrent ? 1.08 : 1 }}
+              transition={{ layout: { type: 'spring', stiffness: 380, damping: 30 }, default: { type: 'spring', stiffness: 420, damping: 22 } }}
               className="flex shrink-0 flex-col items-center gap-1"
             >
               <motion.div
                 className="flip"
-                initial={revealing ? { rotateY: 180 } : false}
+                initial={revealing && !mine ? { rotateY: 180 } : false}
                 animate={{ rotateY: 0 }}
-                transition={{ delay: revealing ? 0.1 + order * 0.09 : 0, duration: 0.45, ease: [0.3, 1.4, 0.5, 1] }}
+                transition={{ delay: revealing ? 0.15 + order * 0.11 : 0, duration: 0.42, ease: [0.3, 1.35, 0.5, 1] }}
               >
                 <div className="face">
                   <GameCard
                     card={pc.card}
                     width={w}
                     theme={owner?.cardTheme}
-                    style={isCurrent ? { boxShadow: `0 0 0 3px ${color}, 0 10px 24px -6px ${color}` } : undefined}
+                    style={isCurrent ? { boxShadow: `0 0 0 3px ${color}, 0 16px 26px -10px rgb(0 0 0 / .7)` } : undefined}
                   />
                 </div>
                 <div className="back">
@@ -417,7 +470,7 @@ function PlayedTray({ snapshot, byId, colorOf }: { snapshot: RoomSnapshot; byId:
               </motion.div>
               <span className="flex max-w-[calc(var(--card-w)*1.1)] items-center gap-1 truncate text-[10px] font-bold" style={{ color }}>
                 {owner && <Avatar id={owner.avatar} size={14} />}
-                <span className="truncate">{pc.playerId === self.playerId ? t('You') : owner?.name}</span>
+                <span className="truncate">{mine ? t('You') : owner?.name}</span>
               </span>
             </motion.div>
           );
@@ -429,75 +482,143 @@ function PlayedTray({ snapshot, byId, colorOf }: { snapshot: RoomSnapshot; byId:
 
 // ------------------------------------------------------------------ board
 
+type TakeEvent = Extract<NonNullable<RoomSnapshot['room']['lastEvent']>, { type: 'take' }>;
+
 function BoardRow({
   index,
   cards,
   theme,
   selectable,
   danger,
+  dim,
   target,
   landedValue,
-  flash,
+  take,
   onChoose,
 }: {
   index: number;
   cards: Card[];
   theme: string;
   selectable: boolean;
-  danger: boolean;
+  /** Sixth card hovering over this row before it slams in. */
+  danger: Card | null;
+  dim: boolean;
   target: boolean;
   landedValue: number | null;
-  flash: number | null;
+  take: TakeEvent | null;
   onChoose: () => void;
 }) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
-  const penalty = rowPenalty(cards);
-  const full = cards.length >= MAX_ROW_LENGTH;
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const seenTake = useRef<number | null>(take?.id ?? null);
+  const [sweep, setSweep] = useState<{ id: number; old: Card[]; incoming: Card; stage: 'slam' | 'swept' } | null>(null);
 
-  // Record card positions every frame so a take can fly the old cards from where they were.
+  // Record card positions every frame so a take can sweep the old cards from where they were.
   useLayoutEffect(() => {
     const els = ref.current?.querySelectorAll<HTMLElement>('[data-card]') ?? [];
+    const shown = [...(sweep?.stage === 'slam' ? [...sweep.old, sweep.incoming] : cards), ...(danger ? [danger] : [])];
     anchors.rows.prev.set(index, anchors.rows.cur.get(index) ?? []);
     anchors.rows.cur.set(
       index,
-      [...els].map((el) => ({ card: cards.find((c) => c.value === Number(el.dataset.card))!, rect: el.getBoundingClientRect() })).filter((x) => x.card),
+      [...els].map((el) => ({ card: shown.find((c) => c.value === Number(el.dataset.card))!, rect: el.getBoundingClientRect() })).filter((x) => x.card),
     );
   });
 
+  // The take: the incoming card slams into the next slot, the row jolts, then the old cards are swept
+  // into the taker's chip and the penalty rides along to their score.
+  useLayoutEffect(() => {
+    if (!take || take.id === seenTake.current) return;
+    seenTake.current = take.id;
+    const old = (anchors.rows.prev.get(index) ?? []).map((x) => x.card).filter((c) => c.value !== take.card.value);
+    if (!old.length) return;
+    setSweep({ id: take.id, old, incoming: take.card, stage: 'slam' });
+    const slam = window.setTimeout(() => {
+      const chip = anchors.players.get(take.playerId)?.getBoundingClientRect();
+      const oldEls = [...(ref.current?.querySelectorAll<HTMLElement>('[data-old-card]') ?? [])];
+      const rects = oldEls.map((el) => ({ card: old.find((c) => c.value === Number(el.dataset.card))!, rect: el.getBoundingClientRect() })).filter((x) => x.card);
+      if (chip) {
+        fx.flyCards(rects, chip, theme);
+        const badge = badgeRef.current?.getBoundingClientRect();
+        if (badge && take.penalty > 0) fx.token(badge, chip, `+${take.penalty}`, take.penalty >= 7, 150);
+      }
+      if (take.penalty >= 7) fx.shake(take.penalty >= 12 ? 'hard' : 'soft');
+      setSweep((s) => (s && s.id === take.id ? { ...s, stage: 'swept' } : s));
+    }, SLAM_MS);
+    const done = window.setTimeout(() => setSweep((s) => (s?.id === take.id ? null : s)), SLAM_MS + SWEEP_MS);
+    return () => {
+      window.clearTimeout(slam);
+      window.clearTimeout(done);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [take?.id]);
+
+  const slamming = sweep?.stage === 'slam';
+  const display: { card: Card; old?: boolean; hover?: boolean; slam?: boolean }[] = slamming
+    ? [...sweep.old.map((card) => ({ card, old: true })), { card: sweep.incoming, slam: true }]
+    : [...cards.map((card) => ({ card })), ...(danger ? [{ card: danger, hover: true }] : [])];
+  const penalty = rowPenalty(slamming ? sweep.old : cards);
+  const hot = !!danger || slamming;
+  const full = cards.length >= MAX_ROW_LENGTH;
+
   return (
-    <div className={clsx('relative flex items-center gap-1.5 sm:gap-2.5', danger && 'row-danger')}>
+    <motion.div
+      className="relative flex items-center gap-[calc(var(--card-w)*0.09)]"
+      animate={{
+        opacity: dim ? 0.38 : 1,
+        filter: dim ? 'saturate(.4)' : 'saturate(1)',
+        x: slamming ? [0, -7, 6, -4, 2, 0] : 0,
+      }}
+      transition={{ opacity: { duration: 0.2 }, filter: { duration: 0.2 }, x: { duration: 0.34, delay: 0.12 } }}
+    >
       <motion.div
+        ref={badgeRef}
         key={penalty}
-        initial={{ scale: 1.25 }}
+        initial={{ scale: 1.3 }}
         animate={{ scale: 1 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+        transition={{ type: 'spring', stiffness: 520, damping: 14 }}
         className={clsx(
-          'flex w-9 shrink-0 flex-col items-center justify-center rounded-xl py-1.5 sm:w-11',
-          danger ? 'bg-bull text-white' : penalty >= 10 ? 'bg-bull/25 text-white' : 'bg-black/25 text-mist',
+          'flex w-[calc(var(--card-w)*0.62)] shrink-0 flex-col items-center justify-center rounded-xl py-1.5 transition-colors',
+          hot ? 'bg-bull text-white' : penalty >= 10 ? 'bg-bull/25 text-white' : 'bg-black/25 text-mist',
         )}
         title={t('Row {n}: {p} bullheads', { n: index + 1, p: penalty })}
       >
-        <Bullhead size={14} className={danger ? 'text-white' : penalty >= 10 ? 'text-bull' : 'text-fog'} />
-        <span className="font-display text-sm font-bold tabular">{penalty}</span>
+        <Bullhead size={14} className={hot ? 'text-white' : penalty >= 10 ? 'text-bull' : 'text-fog'} />
+        <span className="font-display text-sm font-bold tabular sm:text-base">{penalty}</span>
       </motion.div>
-      <div ref={ref} className="flex gap-[4px] sm:gap-1.5">
+
+      <div ref={ref} className="flex gap-[calc(var(--card-w)*0.07)]">
         {Array.from({ length: MAX_ROW_LENGTH + 1 }, (_, i) => {
-          const card = cards[i];
-          if (card) {
-            const justLanded = card.value === landedValue;
+          const slot = display[i];
+          if (slot) {
+            const justLanded = slot.card.value === landedValue;
             return (
               <motion.div
-                key={card.value}
-                data-card={card.value}
-                layoutId={`card-${card.value}`}
-                animate={justLanded ? { scale: [1, 1.14, 0.94, 1], rotate: [0, -3, 2, 0] } : { scale: 1, rotate: 0 }}
+                key={slot.card.value}
+                data-card={slot.card.value}
+                {...(slot.old ? { 'data-old-card': slot.card.value } : {})}
+                layoutId={`card-${slot.card.value}`}
+                animate={
+                  slot.hover
+                    ? { y: -30, rotate: [-4, 4, -4], scale: 1.08 }
+                    : slot.slam
+                      ? { y: 0, rotate: 0, scale: [1.18, 0.93, 1] }
+                      : justLanded
+                        ? { y: 0, rotate: 0, scale: [1.1, 0.95, 1] }
+                        : { y: 0, rotate: 0, scale: 1 }
+                }
                 transition={{
-                  layout: { type: 'spring', stiffness: 420, damping: 30 },
-                  default: { duration: 0.45, delay: justLanded ? 0.22 : 0 },
+                  layout: { type: 'spring', stiffness: slot.slam ? 900 : 460, damping: slot.slam ? 32 : 30 },
+                  rotate: slot.hover ? { repeat: Infinity, duration: 0.5, ease: 'easeInOut' } : { duration: 0.2 },
+                  default: { duration: slot.slam ? 0.3 : 0.28, delay: justLanded ? 0.2 : slot.slam ? 0.06 : 0 },
                 }}
+                style={{ zIndex: slot.hover || slot.slam ? 5 : undefined }}
               >
-                <GameCard card={card} theme={theme} />
+                <GameCard
+                  card={slot.card}
+                  theme={theme}
+                  style={slot.hover ? { boxShadow: '0 0 0 3px #e5484d, 0 22px 30px -10px rgb(0 0 0 / .75)' } : undefined}
+                />
               </motion.div>
             );
           }
@@ -508,8 +629,7 @@ function BoardRow({
               className={clsx(
                 'slot transition-colors',
                 isSixth && 'slot-danger',
-                isSixth && full && 'animate-pulse',
-                isSixth && danger && '!border-bull !bg-bull/30',
+                isSixth && full && !danger && 'animate-pulse',
                 target && i === cards.length && '!border-hay !border-solid bg-hay/10',
               )}
             />
@@ -517,25 +637,14 @@ function BoardRow({
         })}
       </div>
 
-      <AnimatePresence>
-        {flash !== null && (
-          <motion.div
-            key={flash}
-            className="pointer-events-none absolute inset-[-4px] rounded-2xl border-2 border-bull bg-bull/15"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 1, 0] }}
-            transition={{ duration: 1.1 }}
-          />
-        )}
-      </AnimatePresence>
       {danger && (
         <motion.span
           initial={{ scale: 0, rotate: -20 }}
-          animate={{ scale: 1, rotate: 0 }}
+          animate={{ scale: 1, rotate: -6 }}
           transition={{ type: 'spring', stiffness: 700, damping: 14 }}
-          className="pointer-events-none absolute -right-2 -top-3 z-10 rounded-full bg-bull px-2 py-0.5 font-display text-xs font-extrabold text-white shadow-lg"
+          className="pointer-events-none absolute -top-3 right-[calc(var(--card-w)*1.3)] z-20 rounded-lg bg-bull px-2 py-0.5 font-display text-xs font-extrabold text-white shadow-[0_3px_0_#8e1f27] sm:text-sm"
         >
-          {t('6th card!')}
+          {t('Wait. This one’s the sixth.')}
         </motion.span>
       )}
 
@@ -553,7 +662,7 @@ function BoardRow({
           </span>
         </motion.button>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -659,6 +768,7 @@ function Hand({
   const t = useT();
   const [pick, setPick] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const inHand = hand.filter((c) => c.value !== selected);
   const dragged = useRef(false);
   const [overlap, setOverlap] = useState(0);
 
@@ -673,7 +783,7 @@ function Hand({
       const first = el.querySelector<HTMLElement>('[data-hand-card]');
       if (!first) return;
       const w = first.offsetWidth;
-      const n = hand.length;
+      const n = inHand.length;
       const gap = 6;
       const needed = n * w + (n - 1) * gap;
       setOverlap(n > 1 && needed > el.clientWidth ? (needed - el.clientWidth) / (n - 1) + gap : 0);
@@ -682,7 +792,7 @@ function Hand({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [hand.length]);
+  }, [inHand.length]);
 
   useEffect(() => {
     if (!canPlay) return;
@@ -701,12 +811,12 @@ function Hand({
     return () => window.removeEventListener('keydown', onKey);
   }, [canPlay, pick, onPlay, hand]);
 
-  const mid = (hand.length - 1) / 2;
-  const spread = Math.min(3.2, 26 / Math.max(1, hand.length));
+  const mid = (inHand.length - 1) / 2;
+  const spread = Math.min(3.2, 26 / Math.max(1, inHand.length));
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="flex h-8 items-center justify-center">
+      <div className="flex h-7 items-center justify-center">
         <AnimatePresence mode="wait">
           {canPlay && pick !== null ? (
             <motion.button
@@ -731,9 +841,9 @@ function Hand({
           ) : null}
         </AnimatePresence>
       </div>
-      <div ref={box} className="flex justify-center pb-6 pt-3" style={{ '--overlap': `${overlap}px` } as CSSProperties}>
+      <div ref={box} className="flex justify-center pb-5 pt-2" style={{ '--overlap': `${overlap}px` } as CSSProperties}>
         <AnimatePresence initial={false}>
-          {hand.map((card, i) => {
+          {inHand.map((card, i) => {
             const isPick = pick === card.value;
             const isPlayed = selected === card.value;
             const lift = isPick || isPlayed ? -22 : 0;
@@ -745,7 +855,8 @@ function Hand({
                 layoutId={`card-${card.value}`}
                 initial={dealing ? { y: -320, x: (mid - i) * 30, rotate: (mid - i) * 12, opacity: 0, scale: 0.5 } : { y: 40, opacity: 0 }}
                 animate={{ y: arc + lift, x: 0, rotate: isPick || isPlayed ? 0 : (i - mid) * spread, opacity: 1, scale: isPick ? 1.06 : 1 }}
-                exit={{ y: -40, opacity: 0, scale: 0.8 }}
+                layout
+                exit={{ opacity: 0, transition: { duration: 0 } }}
                 transition={{ type: 'spring', stiffness: 380, damping: 26, delay: dealing ? i * 0.045 : 0 }}
                 whileHover={canPlay && !isPick ? { y: arc - 10, rotate: 0 } : undefined}
                 drag={canPlay ? 'y' : false}

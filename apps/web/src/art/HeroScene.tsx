@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { makeCard, rowPenalty } from '@take6/shared';
 import { GameCard } from '../components/GameCard';
 import { Bullhead } from './icons';
-import { BullMark, Starburst } from './BullMark';
+import { BullMark } from './BullMark';
+import { AnimatedNumber } from '../components/AnimatedNumber';
 import { useT } from '../i18n';
 
 /**
@@ -24,6 +25,7 @@ const ROWS = [[3, 18], [7, 11, 42, 55, 66], [24, 31, 38], [80, 91, 99]].map((r) 
 const DANGER = 1;
 const INCOMING = makeCard(67);
 const PENALTY = rowPenalty(ROWS[DANGER]);
+const SCORE_BEFORE = 11;
 
 export function HeroScene() {
   const t = useT();
@@ -57,7 +59,11 @@ export function HeroScene() {
     >
       <div className="absolute inset-[10%] -z-10 rounded-full bg-bull/25 blur-3xl" />
 
-      <div className="felt relative rounded-[1.6rem] p-3 sm:p-4">
+      <motion.div
+        className="felt relative rounded-[1.6rem] p-3 sm:p-4"
+        animate={phase === 'land' ? { x: [0, -5, 5, -3, 2, 0], y: [0, 2, -2, 1, 0] } : { x: 0, y: 0 }}
+        transition={{ duration: 0.38 }}
+      >
         <div className="flex flex-col gap-[var(--g)]">
           {ROWS.map((row, r) => {
             const danger = r === DANGER;
@@ -88,10 +94,10 @@ export function HeroScene() {
                         className="relative"
                         animate={
                           flying
-                            ? { x: 140 + i * 18, y: 150 + i * 10, rotate: 30 + i * 22, scale: 0.35, opacity: 0 }
+                            ? { x: `${-(i * 110 + 60)}%`, y: '340%', rotate: -(20 + i * 18), scale: 0.3, opacity: [1, 1, 0] }
                             : { x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 }
                         }
-                        transition={flying ? { duration: 0.75, delay: 0.25 + i * 0.05, ease: [0.5, 0, 0.8, 0.4] } : { duration: 0.35, delay: phase === 'idle' ? i * 0.04 : 0 }}
+                        transition={flying ? { duration: 0.7, delay: 0.3 + (4 - i) * 0.05, ease: [0.5, 0, 0.8, 0.4] } : { duration: 0.35, delay: phase === 'idle' ? i * 0.04 : 0 }}
                       >
                         <GameCard card={card} width="var(--hw)" />
                       </motion.div>
@@ -115,7 +121,7 @@ export function HeroScene() {
                             phase === 'idle'
                               ? { x: 110, y: -150, rotate: 26, opacity: 0, scale: 1.1 }
                               : phase === 'approach'
-                                ? { x: [70, 36], y: [-110, -46], rotate: [20, 10], opacity: 1, scale: 1.08 }
+                                ? { x: [70, 52, 36], y: [-110, -70, -46], rotate: [20, 8, 16, 6, 12, 8], opacity: 1, scale: 1.08 }
                                 : phase === 'land'
                                   ? { x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 }
                                   : phase === 'boom'
@@ -159,29 +165,34 @@ export function HeroScene() {
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
-      {/* the payoff: penalty explosion + the smug bull */}
+      {/* the payoff: the row lands on "your" score and the bull can't hide its grin */}
+      <div className="absolute -bottom-9 left-3 z-20 flex items-center gap-2 rounded-2xl border border-white/10 bg-ink-900/95 py-1.5 pl-1.5 pr-3 shadow-xl">
+        <BullMark size={30} mood={exploded ? 'shock' : 'neutral'} />
+        <span className="leading-tight">
+          <span className="block text-xs font-semibold text-mist">{t('You')}</span>
+          <span className="flex items-center gap-1 font-display text-lg font-extrabold tabular text-white">
+            <Bullhead size={13} className="text-bull" />
+            <AnimatedNumber value={exploded ? SCORE_BEFORE + PENALTY : SCORE_BEFORE} delay={exploded ? 1.05 : 0} />
+          </span>
+        </span>
+      </div>
       <AnimatePresence>
         {exploded && (
           <>
-            <motion.div
-              key="burst"
-              className="pointer-events-none absolute -right-3 top-[26%] z-20 grid place-items-center sm:-right-8"
-              initial={{ scale: 0, rotate: -40 }}
-              animate={{ scale: [0, 1.25, 1], rotate: 0 }}
-              exit={{ scale: 0, opacity: 0 }}
-              transition={{ delay: 0.55, duration: 0.5, ease: 'easeOut' }}
+            <motion.span
+              key="token"
+              className="pointer-events-none absolute left-[3%] top-[27%] z-30 flex items-center gap-1 rounded-full bg-bull px-3 py-1 font-display text-lg font-extrabold text-white shadow-[0_4px_0_#8e1f27]"
+              initial={{ opacity: 0, scale: 0.5, y: 0 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.3, 1, 0.8], y: [0, -30, 0, 250], x: [0, 10, 14, 10] }}
+              transition={{ delay: 0.45, duration: 0.9, times: [0, 0.25, 0.5, 1], ease: 'easeInOut' }}
             >
-              <Starburst size="clamp(110px, 30vw, 150px)" color="#E5484D" />
-              <span className="absolute flex items-center gap-1 font-display text-3xl font-extrabold text-white drop-shadow sm:text-4xl">
-                +{PENALTY}
-                <Bullhead size={22} />
-              </span>
-            </motion.div>
+              +{PENALTY} <Bullhead size={16} />
+            </motion.span>
             <motion.div
               key="bull"
-              className="pointer-events-none absolute bottom-[3%] right-[20%] z-20"
+              className="pointer-events-none absolute bottom-[3%] right-[18%] z-20"
               initial={{ y: 80, rotate: -20, opacity: 0 }}
               animate={{ y: 0, rotate: [-20, 8, -3, 0], opacity: 1 }}
               exit={{ y: 60, opacity: 0 }}
