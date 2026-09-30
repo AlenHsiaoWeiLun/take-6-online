@@ -1,97 +1,57 @@
-# Take 6 Online (6 nimmt!)
+# Take 6 Online
 
-A high-quality, multiplayer Take 6 web application built with React, Node.js, and Socket.IO.
+A free, ad-supported multiplayer version of the bullhead card game (2–10 players), with a one-time **Plus** upgrade. English UI, mobile-first, playable in the browser.
 
-## Features
-- **Real-time Multiplayer**: Authoritative server handling game state.
-- **Bot Support**: Add bots to fill seats or play solo.
-- **Perspective Rotation**: You are always at the bottom of the table.
-- **Smooth Animations**: Framer Motion powered card movements and row takes.
-- **Custom Visuals**: No standard emojis; all icons and bullheads are custom SVGs.
-- **Sound Effects**: Immersive audio for game actions.
-- **Reconnect Support**: Session-based reconnection.
+> ⚠️ **Before launching commercially:** "Take 6!" and "6 nimmt!" are trademarks of AMIGO Spiele. Game rules can't be owned, but names and trade dress can. Rename the product in [`apps/web/src/brand.ts`](apps/web/src/brand.ts) (plus the `<title>` in `apps/web/index.html`) before you run ads or take payments. See [docs/LAUNCH.md](docs/LAUNCH.md#0-pick-a-name).
 
-## Tech Stack
-- **Frontend**: React, TypeScript, Tailwind CSS, Framer Motion, Socket.IO Client.
-- **Backend**: Node.js, Express, Socket.IO, tsx.
-- **Shared**: Common game logic and types shared between client and server.
+## What's inside
 
-## Installation
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. If you want the bot backend, install the Python dependencies as well:
-   ```bash
-   pip install numpy gym==0.26.2
-   pip install --index-url https://download.pytorch.org/whl/cpu torch
-   ```
-3. Start the development server (runs both frontend and backend):
-   ```bash
-   npm run dev
-   ```
-4. Open `http://localhost:3000` in multiple browser tabs to test multiplayer.
+| | |
+|---|---|
+| **Game** | Multi-room server-authoritative engine. Private rooms with 4-letter codes, public matchmaking that auto-fills with bots, spectators, reconnect, turn timers, AFK auto-play, host controls, emotes. Quick game (10 turns) or Race to 66. |
+| **Bots** | Monte Carlo bot in TypeScript (easy / normal / hard). Your Python FAI agents still plug in with `BOT_ENGINE=fai`. |
+| **Accounts** | Guests by default. Supabase Auth (Google + email magic link) for saved stats, the leaderboard and Plus. |
+| **Money** | Google AdSense slots (home, lobby, leaderboard, results; never during play) and Stripe Checkout for a one-time Plus purchase (no ads, 3 card styles, 2 characters). Webhook, refund handling and a verify fallback are included. |
+| **Art** | A hand-built SVG/CSS art set (logo, 10 characters, icons, card themes, felt, 3D deck box) that ships as-is, plus `npm run art`, which generates illustrations, characters, backgrounds, 3D renders, product shots, stickers and textures with OpenAI or Gemini and swaps them in automatically. |
 
-## Deployment
-1. Copy `.env.example` to `.env` and fill in your Firebase config plus any agent overrides.
-2. In Firebase Authentication, enable Google sign-in and add your production domain to Authorized domains.
-3. Build the client:
-   ```bash
-   npm run build
-   ```
-4. Start the production server:
-   ```bash
-   npm start
-   ```
+## Layout
 
-The production server reads `PORT` from the environment and serves the built `dist/` bundle.
-
-## Render Deploy
-This repo includes [`render.yaml`](/Users/alenhsiao/Downloads/take-6-online/render.yaml) and a [`Dockerfile`](/Users/alenhsiao/Downloads/take-6-online/Dockerfile) so Render can run the full stack in one service: Vite build output, Express, Socket.IO, and the Python bot worker.
-
-Deploy flow:
-1. Push this repo to GitHub.
-2. In Render, choose `New +` -> `Blueprint`.
-3. Select this repository and let Render read `render.yaml`.
-4. Deploy the `take6-online` web service.
-5. After Render gives you a URL, add that domain in Firebase Authentication -> Authorized domains.
-
-Because the frontend and backend are served by the same Render service, you do not need `VITE_SERVER_URL` for the Render deployment.
-
-The default Render configuration uses the lightweight `RandomPlayer` bot so Docker builds stay small and reliable on the free tier. The RL adapter remains available for local development or custom deployments with extra Python dependencies.
-
-## Bot Backend
-Bots call a Python worker that loads a configurable agent class and passes it the current `hand/history`.
-
-Default agent env:
-```bash
-FAI_AGENT_ROOT=./2026-FAI-Final-Release-main
-FAI_AGENT_MODULE=src.players.TA.random_player
-FAI_AGENT_CLASS=RandomPlayer
-FAI_AGENT_ARGS={}
+```
+apps/web         React 19 + Vite + Tailwind v4 + Framer Motion    → Vercel
+apps/server      Express 5 + Socket.IO + Prisma + Stripe          → Railway (Docker)
+packages/shared  Rules, protocol types, cosmetics, bot AI (used by both)
+art/prompts.json Image-generation briefs for every asset
+scripts/         generate-art.mjs, smoke-test.mjs
 ```
 
-If you want to switch to the vendored RL adapter:
+`server/` (Python worker + adapters) and `2026-FAI-Final-Release-main/`, `vendor/` hold the optional Python FAI agents used when `BOT_ENGINE=fai`.
+
+## Run locally
+
 ```bash
-FAI_AGENT_ROOT=.
-FAI_AGENT_MODULE=server.agents.rl6_nimmt_adapter
-FAI_AGENT_CLASS=RL6NimmtAgentAdapter
-FAI_AGENT_ARGS={"repo_root":"./vendor/rl-6-nimmt","agent_name":"mcts","agent_kwargs":{"mc_per_card":3,"mc_max":30}}
+npm install
+npm run dev          # server on :3001, web on :5173
 ```
 
-This adapter vendors [`johannbrehmer/rl-6-nimmt`](https://github.com/johannbrehmer/rl-6-nimmt) and maps this app's live board state into that repo's Gym-style observation format. It requires extra Python dependencies such as `numpy`, `gym`, and `torch`, so it is not enabled by default in the Render blueprint.
+Open http://localhost:5173. Supabase, Stripe and AdSense are all optional locally: without them you get guest-only play with ad placeholders.
 
-## How to Play
-1. Join a seat at the table.
-2. Add bots if you don't have enough players (4 players required).
-3. Click "START GAME".
-4. Each round, select one card from your hand.
-5. Once everyone selects, cards are revealed and placed on the rows according to the rules.
-6. Avoid taking cards! The player with the fewest bullheads at the end of 10 rounds wins.
+```bash
+npm test                       # rules, bot and full-game simulations
+node scripts/smoke-test.mjs    # 3 live socket clients play a full game against the running server
+npm run typecheck
+```
 
-## Project Structure
-- `/src/shared`: Pure game logic, constants, and TypeScript types.
-- `/server`: Socket.IO server and game state management.
-- `/src/components`: React UI components (Cards, Table, Seats, etc.).
-- `/src/store`: React Context for game state and socket communication.
-- `/src/services`: Sound and other utility services.
+## Generate the art
+
+```bash
+cp .env.example .env           # add OPENAI_API_KEY or GEMINI_API_KEY
+npm run art -- --list          # see what exists
+npm run art -- --only=character,logo
+npm run art                    # everything that's missing
+```
+
+Images land in `apps/web/public/art/*.webp` and are registered in `apps/web/src/art/manifest.json`. Commit both. To change the look, edit the `style` and `prompt` fields in [`art/prompts.json`](art/prompts.json) and rerun with `--force`.
+
+## Deploy
+
+Full step-by-step guide: **[docs/LAUNCH.md](docs/LAUNCH.md)** (GitHub → Supabase → Railway → Vercel → Cloudflare → Stripe → AdSense).

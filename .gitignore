@@ -9,3 +9,9 @@ __pycache__/
 *.pyc
 .env*
 !.env.example
+
+# monorepo
+apps/*/.env
+apps/*/.env.local
+apps/*/dist
+.vercel

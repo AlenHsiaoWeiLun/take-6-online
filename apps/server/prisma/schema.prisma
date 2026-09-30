@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// One row per Supabase Auth user (id = auth.users.id).
+model Profile {
+  id               String    @id @db.Uuid
+  email            String?
+  displayName      String
+  avatar           String    @default("bruno")
+  cardTheme        String    @default("classic")
+  isPlus           Boolean   @default(false)
+  plusSince        DateTime?
+  stripeCustomerId String?   @unique
+  gamesPlayed      Int       @default(0)
+  gamesWon         Int       @default(0)
+  /// Games with at least one other human — used for the public leaderboard.
+  onlineGames      Int       @default(0)
+  onlineWins       Int       @default(0)
+  totalBullheads   Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  matches   MatchPlayer[]
+  purchases Purchase[]
+
+  @@index([onlineWins])
+}
+
+model Match {
+  id          String   @id @default(cuid())
+  roomCode    String
+  mode        String
+  playerCount Int
+  humanCount  Int
+  hands       Int
+  startedAt   DateTime
+  endedAt     DateTime @default(now())
+
+  players MatchPlayer[]
+
+  @@index([endedAt])
+}
+
+model MatchPlayer {
+  id        String   @id @default(cuid())
+  matchId   String
+  profileId String?  @db.Uuid
+  name      String
+  isBot     Boolean
+  score     Int
+  rank      Int
+
+  match   Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  profile Profile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+}
+
+model Purchase {
+  id              String   @id @default(cuid())
+  profileId       String   @db.Uuid
+  product         String
+  stripeSessionId String   @unique
+  paymentIntentId String?  @unique
+  amountTotal     Int
+  currency        String
+  refunded        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}
