@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import clsx from 'clsx';
 import { config } from '../lib/config';
 import { useSession } from '../state/session';
+import { useT } from '../i18n';
 
 declare global {
   interface Window {
@@ -24,8 +25,9 @@ function loadAdSense() {
  * Google AdSense unit. Never rendered for Plus members and never placed over the live table —
  * only on menus, lobby, and between games.
  */
-export function AdSlot({ slot, className, label = 'Advertisement' }: { slot: keyof typeof config.adSlots; className?: string; label?: string }) {
+export function AdSlot({ slot, className }: { slot: keyof typeof config.adSlots; className?: string }) {
   const { session } = useSession();
+  const t = useT();
   const ref = useRef<HTMLModElement>(null);
   const slotId = config.adSlots[slot];
   const live = !!config.adsenseClient && !!slotId && !session.isPlus;
@@ -51,7 +53,7 @@ export function AdSlot({ slot, className, label = 'Advertisement' }: { slot: key
   }
   return (
     <div className={clsx('overflow-hidden', className)}>
-      <div className="mb-1 text-center text-[10px] uppercase tracking-widest text-fog/50">{label}</div>
+      <div className="mb-1 text-center text-[10px] uppercase tracking-widest text-fog/50">{t('Advertisement')}</div>
       <ins
         ref={ref}
         className="adsbygoogle block"

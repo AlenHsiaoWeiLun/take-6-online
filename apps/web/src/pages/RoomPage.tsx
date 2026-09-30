@@ -5,11 +5,13 @@ import { useSession } from '../state/session';
 import { Lobby } from '../game/Lobby';
 import { Table } from '../game/Table';
 import { Header } from '../components/Header';
+import { useT } from '../i18n';
 
 export function RoomPage() {
   const code = (useParams().code ?? '').toUpperCase();
   const { socket, connected } = useSession();
   const { snapshot, error, closedReason, emotes, clockOffset } = useRoom(code);
+  const t = useT();
 
   useEffect(() => () => void socket?.emit('room:leave'), [socket]);
 
@@ -17,7 +19,7 @@ export function RoomPage() {
     return (
       <>
         <Header />
-        <Notice title={closedReason ? 'You left the table' : 'Can’t join that table'} body={closedReason ?? error ?? ''} />
+        <Notice title={closedReason ? t('You left the table') : t('Can’t join that table')} body={t(closedReason ?? error ?? '')} />
       </>
     );
   }
@@ -26,7 +28,7 @@ export function RoomPage() {
     return (
       <>
         <Header />
-        <Notice title={connected ? 'Finding your seat…' : 'Connecting…'} body={`Room ${code}`} spinner />
+        <Notice title={connected ? t('Finding your seat…') : t('Connecting…')} body={t('Room {code}', { code })} spinner />
       </>
     );
   }
@@ -43,6 +45,7 @@ export function RoomPage() {
 }
 
 function Notice({ title, body, spinner }: { title: string; body: string; spinner?: boolean }) {
+  const t = useT();
   return (
     <div className="mx-auto grid max-w-md place-items-center px-4 py-24 text-center">
       {spinner && <span className="mb-5 size-8 animate-spin rounded-full border-2 border-white/15 border-t-hay" />}
@@ -50,7 +53,7 @@ function Notice({ title, body, spinner }: { title: string; body: string; spinner
       <p className="mt-2 text-fog">{body}</p>
       {!spinner && (
         <Link to="/" className="btn btn-primary mt-6">
-          Back to the lobby
+          {t('Back to the lobby')}
         </Link>
       )}
     </div>

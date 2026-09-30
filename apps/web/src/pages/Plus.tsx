@@ -9,6 +9,7 @@ import { Avatar } from '../components/Avatar';
 import { useSession } from '../state/session';
 import { api, formatPrice } from '../lib/api';
 import { BRAND } from '../brand';
+import { useT } from '../i18n';
 
 const PERKS = [
   'No ads — anywhere, ever',
@@ -23,6 +24,7 @@ export function Plus() {
   const { session, user, authEnabled, serverConfig, signInWithGoogle } = useSession();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
   const price = formatPrice(serverConfig?.plusPrice) ?? '$4.99';
   const paymentsOn = !!serverConfig?.features.payments;
 
@@ -33,7 +35,7 @@ export function Plus() {
       const { url } = await api<{ url: string }>('/api/billing/checkout', { method: 'POST' });
       window.location.assign(url);
     } catch (e) {
-      setError((e as Error).message);
+      setError(t((e as Error).message));
       setBusy(false);
     }
   };
@@ -44,34 +46,34 @@ export function Plus() {
         <div>
           <span className="chip border-hay/30 bg-hay/10 text-hay"><IconSparkle size={12} /> {BRAND.plus}</span>
           <h1 className="mt-4 font-display text-5xl font-extrabold leading-[0.95] tracking-tight sm:text-6xl">
-            Play <span className="text-hay">beautifully.</span>
+            {t('Play')} <span className="text-hay">{t('beautifully.')}</span>
           </h1>
-          <p className="mt-4 max-w-md text-lg text-fog">One payment. No subscription. Ad-free forever, with the prettiest decks on the table.</p>
+          <p className="mt-4 max-w-md text-lg text-fog">{t('One payment. No subscription. Ad-free forever, with the prettiest decks on the table.')}</p>
 
           <ul className="mt-6 space-y-2.5">
             {PERKS.map((p) => (
               <li key={p} className="flex items-start gap-2.5">
                 <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-hay/15 text-hay"><IconCheck size={12} strokeWidth={3} /></span>
-                <span className="text-mist">{p}</span>
+                <span className="text-mist">{t(p)}</span>
               </li>
             ))}
           </ul>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             {session.isPlus ? (
-              <span className="chip !px-4 !py-2 !text-sm !text-hay"><IconCheck size={14} /> You have Plus — thank you!</span>
+              <span className="chip !px-4 !py-2 !text-sm !text-hay"><IconCheck size={14} /> {t('You have Plus — thank you!')}</span>
             ) : !paymentsOn ? (
-              <span className="text-sm text-fog">Plus is coming soon.</span>
+              <span className="text-sm text-fog">{t('Plus is coming soon.')}</span>
             ) : user ? (
               <button className="btn btn-gold btn-lg" onClick={buy} disabled={busy}>
-                {busy ? 'Opening checkout…' : `Get Plus · ${price}`}
+                {busy ? t('Opening checkout…') : t('Get Plus · {price}', { price })}
               </button>
             ) : authEnabled ? (
               <button className="btn btn-gold btn-lg" onClick={() => signInWithGoogle()}>
-                <IconGoogle /> Sign in to get Plus
+                <IconGoogle /> {t('Sign in to get Plus')}
               </button>
             ) : null}
-            {!session.isPlus && paymentsOn && <span className="text-sm text-fog">Secure checkout by Stripe</span>}
+            {!session.isPlus && paymentsOn && <span className="text-sm text-fog">{t('Secure checkout by Stripe')}</span>}
           </div>
           {error && <p className="mt-3 text-sm text-bull">{error}</p>}
         </div>
@@ -79,40 +81,40 @@ export function Plus() {
       </div>
 
       <section className="mt-20">
-        <h2 className="font-display text-2xl font-bold">Collector card styles</h2>
+        <h2 className="font-display text-2xl font-bold">{t('Collector card styles')}</h2>
         <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-          {CARD_THEMES.map((t) => (
-            <div key={t.id} className="panel flex flex-col items-center p-5 text-center">
+          {CARD_THEMES.map((th) => (
+            <div key={th.id} className="panel flex flex-col items-center p-5 text-center">
               <Art
-                id={`product-theme-${t.id}`}
-                alt={`${t.name} card style`}
+                id={`product-theme-${th.id}`}
+                alt={t(th.name)}
                 className="h-28 w-auto object-contain"
                 fallback={
                   <div className="flex -space-x-6">
                     {[11, 55, 30].map((v, i) => (
                       <div key={v} style={{ transform: `rotate(${(i - 1) * 9}deg) translateY(${i === 1 ? -6 : 0}px)` }}>
-                        <GameCard card={makeCard(v)} theme={t.id} width={64} />
+                        <GameCard card={makeCard(v)} theme={th.id} width={64} />
                       </div>
                     ))}
                   </div>
                 }
               />
-              <div className="mt-4 font-semibold">{t.name}</div>
-              <div className="mt-1 text-xs text-fog">{t.plus ? 'Plus' : 'Free'} · {t.description}</div>
+              <div className="mt-4 font-semibold">{t(th.name)}</div>
+              <div className="mt-1 text-xs text-fog">{th.plus ? 'Plus' : t('Free')} · {t(th.description)}</div>
             </div>
           ))}
         </div>
       </section>
 
       <section className="mt-14">
-        <h2 className="font-display text-2xl font-bold">Exclusive characters</h2>
+        <h2 className="font-display text-2xl font-bold">{t('Exclusive characters')}</h2>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {CHARACTERS.filter((c) => c.plus).map((c) => (
             <div key={c.id} className="panel flex items-center gap-4 p-5">
               <Avatar id={c.id} size={80} ring="#f5b942" />
               <div>
                 <div className="font-display text-xl font-bold">{c.name}</div>
-                <div className="text-sm text-fog">{c.tagline}</div>
+                <div className="text-sm text-fog">{t(c.tagline)}</div>
               </div>
             </div>
           ))}
@@ -120,7 +122,7 @@ export function Plus() {
       </section>
 
       <p className="mt-12 text-center text-xs text-fog">
-        Plus is a one-time purchase tied to your account. See our <Link to="/terms" className="underline">terms</Link> for refunds.
+        {t('Plus is a one-time purchase tied to your account.')} <Link to="/terms" className="underline">{t('Terms')}</Link>
       </p>
     </div>
   );
@@ -130,6 +132,7 @@ export function PlusSuccess() {
   const [params] = useSearchParams();
   const { session, user } = useSession();
   const [state, setState] = useState<'checking' | 'done' | 'pending'>('checking');
+  const t = useT();
 
   useEffect(() => {
     if (session.isPlus) return setState('done');
@@ -143,13 +146,13 @@ export function PlusSuccess() {
   return (
     <div className="mx-auto max-w-lg px-4 py-24 text-center">
       <div className="mx-auto size-24"><Avatar id="aurum" size={96} ring="#f5b942" /></div>
-      <h1 className="mt-6 font-display text-4xl font-extrabold">{state === 'checking' ? 'Confirming…' : 'Welcome to Plus!'}</h1>
+      <h1 className="mt-6 font-display text-4xl font-extrabold">{state === 'checking' ? t('Confirming…') : t('Welcome to Plus!')}</h1>
       <p className="mt-3 text-fog">
         {state === 'pending'
-          ? 'Your payment went through. Plus will appear on your account within a minute — refresh if it doesn’t.'
-          : 'Ads are gone and every card style and character is unlocked. Pick your look from your profile.'}
+          ? t('Your payment went through. Plus will appear on your account within a minute — refresh if it doesn’t.')
+          : t('Ads are gone and every card style and character is unlocked. Pick your look from your profile.')}
       </p>
-      <Link to="/" className="btn btn-gold btn-lg mt-8">Back to the table</Link>
+      <Link to="/" className="btn btn-gold btn-lg mt-8">{t('Back to the table')}</Link>
     </div>
   );
 }

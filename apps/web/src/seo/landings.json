@@ -1,0 +1,93 @@
+[
+  {
+    "path": "/6-nimmt-online",
+    "lang": "en",
+    "alternate": "/zh-tw",
+    "title": "6 nimmt! Online Free — Play the Bullhead Card Game with Friends | Bullheads",
+    "description": "Looking for 6 nimmt! online? Bullheads is a free browser card game with the same 104-card rules. Private rooms for 2–10 friends, public matches and smart bots. No download, no sign-up.",
+    "h1": "Looking for 6 nimmt! online? Play Bullheads free.",
+    "lead": "Bullheads is a free online card game played with the classic 104-card rules you know from 6 nimmt!. Open a private room, send your friends a 4-letter code and play together in seconds — on phones, tablets or computers.",
+    "sections": [
+      {
+        "h2": "Same rules you already know",
+        "p": [
+          "Everyone picks a card at the same time. Cards are placed from lowest to highest onto the row whose last card is closest below. Play the sixth card on a row and you take the five cards before it — and all their bullheads.",
+          "Cards lower than every row force you to take a row of your choice. After ten turns the player with the fewest bullheads wins. Want a longer game? Race to 66 keeps dealing hands until someone hits 66."
+        ]
+      },
+      {
+        "h2": "Made for playing online",
+        "p": [
+          "2 to 10 players per table, turn timers so nobody stalls, automatic reconnect if your phone drops, and Monte-Carlo bots on easy, normal or hard to fill empty seats or to practise alone.",
+          "It’s completely free. Everything that affects play is free forever; an optional Plus upgrade only removes ads and adds cosmetic card styles."
+        ]
+      },
+      {
+        "h2": "How to start a game with friends",
+        "p": [
+          "1. Enter a name and pick a bull character. 2. Tap Private room. 3. Share the room code or link. 4. When everyone’s in, the host deals the cards."
+        ]
+      }
+    ],
+    "cta": "Play free now",
+    "disclaimer": "Bullheads is an independent game and is not affiliated with, endorsed by or sponsored by AMIGO Spiele. 6 nimmt!® is a registered trademark of AMIGO Spiele."
+  },
+  {
+    "path": "/take-5-online",
+    "lang": "en",
+    "alternate": "/zh-tw",
+    "title": "Take 5 Online Free — Bullhead Card Game for 2–10 Players | Bullheads",
+    "description": "Play a free online version of the Take 5 / Take 6 bullhead card game. Same rules, 2–10 players, private rooms with friends or smart bots, no download.",
+    "h1": "Play Take 5 style online — free, with friends or bots",
+    "lead": "Love Take 5 or Take 6 at game night? Bullheads brings the same fast, sneaky bullhead card game to your browser. Share a room code and play with up to 10 friends, anywhere.",
+    "sections": [
+      {
+        "h2": "The rules in 30 seconds",
+        "p": [
+          "104 cards, four rows, ten cards each. Everyone reveals a card at once, lowest goes first, and whoever plays the sixth card on a row takes the whole row. Fewest bullheads wins."
+        ]
+      },
+      {
+        "h2": "Why play Bullheads",
+        "p": [
+          "No app to install and no account needed. Public matchmaking seats you at a table instantly, bots fill any gaps, and a quick game takes about five minutes — perfect for a video call with friends or a break at work."
+        ]
+      }
+    ],
+    "cta": "Deal me in",
+    "disclaimer": "Bullheads is an independent game and is not affiliated with AMIGO Spiele or any publisher of Take 5!, Take 6! or 6 nimmt!®. Those names are trademarks of their respective owners."
+  },
+  {
+    "path": "/zh-tw",
+    "lang": "zh",
+    "alternate": "/6-nimmt-online",
+    "title": "誰是牛頭王 線上版｜免費多人牛頭卡牌遊戲，和朋友一起玩 - Bullheads",
+    "description": "想在線上玩誰是牛頭王嗎？Bullheads 是與《誰是牛頭王》(6 nimmt!) 相同規則的免費 104 張牛頭卡牌遊戲。2–10 人，可開私人房和朋友連線，也能對戰電腦，免下載、免註冊。",
+    "h1": "誰是牛頭王 線上版：免費和朋友一起玩",
+    "lead": "Bullheads 是免費的線上牛頭卡牌遊戲，使用和《誰是牛頭王》一樣的經典 104 張牌規則。開一個私人房間，把 4 碼房號傳給朋友，手機、平板、電腦都能馬上一起玩。",
+    "sections": [
+      {
+        "h2": "規則和你熟悉的一樣",
+        "p": [
+          "所有人同時出一張牌，從最小的開始，放到「末張比它小且最接近」的那一列。誰放下某列的第六張牌，就要吃下前面五張牌和上面所有的牛頭。",
+          "如果你的牌比每一列都小，就要選一列收走。十回合後牛頭最少的人獲勝；想玩久一點可以選「搶 66 模式」，一直打到有人累積 66 個牛頭。"
+        ]
+      },
+      {
+        "h2": "專為線上遊玩設計",
+        "p": [
+          "每桌 2 到 10 人、出牌倒數計時、斷線自動重連，還有簡單、普通、困難三種難度的 AI 電腦玩家，可以補空位，也能自己一個人練習。",
+          "完全免費。所有影響遊戲的內容永久免費，選購的 Plus 只會移除廣告並提供牌面造型。"
+        ]
+      },
+      {
+        "h2": "怎麼和朋友開一局",
+        "p": [
+          "1. 輸入名字並選一隻牛角色　2. 點「私人房間」　3. 分享房號或連結　4. 大家到齊後，房主按「開始發牌」。"
+        ]
+      }
+    ],
+    "cta": "立即免費開玩",
+    "disclaimer": "Bullheads 為獨立製作的遊戲，與 AMIGO Spiele 及《誰是牛頭王》之發行、代理商無任何關係，亦未獲其授權或背書。6 nimmt!® 為 AMIGO Spiele 之註冊商標。"
+  }
+]

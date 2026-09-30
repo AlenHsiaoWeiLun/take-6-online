@@ -13,6 +13,7 @@ import { sound } from '../lib/sound';
 import { useCountdown } from './useCountdown';
 import { GameOver, HandSummary } from './GameOver';
 import { artUrl } from '../art/Art';
+import { useT } from '../i18n';
 
 const feltArt = artUrl('texture-felt');
 
@@ -30,6 +31,7 @@ export function Table({ snapshot, emotes, clockOffset }: Props) {
   const byId = useMemo(() => new Map(room.players.map((p) => [p.id, p])), [room.players]);
   const secondsLeft = useCountdown(room.deadline, clockOffset);
   const theme = session.cardTheme;
+  const t = useT();
 
   const choosing = room.phase === 'choosingRow' ? byId.get(room.choosingPlayerId ?? '') : undefined;
   const iMustChoose = !!choosing && choosing.id === self.playerId;
@@ -40,7 +42,7 @@ export function Table({ snapshot, emotes, clockOffset }: Props) {
 
   const leave = () => {
     const live = room.phase !== 'gameEnd';
-    if (live && me && !window.confirm('Leave this game? Bots will play your cards until you come back.')) return;
+    if (live && me && !window.confirm(t('Leave this game? Bots will play your cards until you come back.'))) return;
     navigate('/');
   };
 
@@ -48,14 +50,14 @@ export function Table({ snapshot, emotes, clockOffset }: Props) {
     <div className="flex h-[100dvh] flex-col overflow-hidden">
       {/* ---------------------------------------------------------- top bar */}
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/6 px-3 sm:px-4">
-        <button className="btn btn-ghost btn-sm !px-2.5" onClick={leave} aria-label="Leave table">
+        <button className="btn btn-ghost btn-sm !px-2.5" onClick={leave} aria-label={t('Leave table')}>
           <IconLogOut size={17} className="rotate-180" />
         </button>
         <div className="leading-tight">
           <div className="font-display text-sm font-bold tracking-[0.18em]">{room.code}</div>
           <div className="text-[11px] text-fog tabular">
-            Turn {Math.min(room.turn, HAND_SIZE)}/{HAND_SIZE}
-            {room.settings.mode === 'classic' && ` · Hand ${room.handNumber}`}
+            {t('Turn {n}/{total}', { n: Math.min(room.turn, HAND_SIZE), total: HAND_SIZE })}
+            {room.settings.mode === 'classic' && ` · ${t('Hand {n}', { n: room.handNumber })}`}
           </div>
         </div>
         <TurnProgress turn={room.turn} />
@@ -112,7 +114,7 @@ export function Table({ snapshot, emotes, clockOffset }: Props) {
               }}
             />
           ) : (
-            <div className="py-4 text-center text-sm text-fog">You’re watching this table. {room.spectatorCount > 1 && `${room.spectatorCount} spectators.`}</div>
+            <div className="py-4 text-center text-sm text-fog">{t('You’re watching this table.')} {room.spectatorCount > 1 && t('{n} spectators.', { n: room.spectatorCount })}</div>
           )}
         </div>
       </LayoutGroup>
@@ -130,6 +132,7 @@ function PlayersBar({ players, selfId, snapshot, emotes }: { players: PublicPlay
   const resolvingId = room.resolvingIndex !== null ? room.played[room.resolvingIndex]?.playerId : null;
   const take = room.lastEvent?.type === 'take' ? room.lastEvent : null;
   const low = Math.min(...players.map((p) => p.score));
+  const t = useT();
 
   return (
     <div className="no-scrollbar flex shrink-0 gap-2 overflow-x-auto px-3 py-2.5 sm:justify-center sm:px-4">
@@ -161,7 +164,7 @@ function PlayersBar({ players, selfId, snapshot, emotes }: { players: PublicPlay
             </span>
             <span className="leading-tight">
               <span className={clsx('block max-w-[6.5rem] truncate text-[13px] font-semibold', thinking && 'text-mist')}>
-                {p.id === selfId ? 'You' : p.name}
+                {p.id === selfId ? t('You') : p.name}
               </span>
               <span className={clsx('flex items-center gap-1 text-xs font-bold tabular', p.score === low && room.turn > 1 ? 'text-mint' : 'text-fog')}>
                 <Bullhead size={11} className="text-bull" /> {p.score}
@@ -190,7 +193,7 @@ function PlayersBar({ players, selfId, snapshot, emotes }: { players: PublicPlay
                   exit={{ opacity: 0, y: -6 }}
                   className="absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded-xl bg-paper px-2.5 py-1 text-xs font-bold text-ink-950 shadow-xl"
                 >
-                  {EMOTES.find((e) => e.id === bubble.emote)?.label}
+                  {t(EMOTES.find((e) => e.id === bubble.emote)?.label ?? '')}
                 </motion.span>
               )}
             </AnimatePresence>
@@ -206,6 +209,7 @@ function PlayersBar({ players, selfId, snapshot, emotes }: { players: PublicPlay
 function PlayedTray({ snapshot, byId, selfId }: { snapshot: RoomSnapshot; byId: Map<string, PublicPlayer>; selfId: string | null }) {
   const { room } = snapshot;
   const onBoard = new Set(room.rows.flatMap((r) => r.cards.map((c) => c.value)));
+  const t = useT();
   const w = 'calc(var(--card-w) * 0.86)';
 
   if (room.phase === 'selecting') {
@@ -250,7 +254,7 @@ function PlayedTray({ snapshot, byId, selfId }: { snapshot: RoomSnapshot; byId: 
               <GameCard card={pc.card} width={w} theme={owner?.cardTheme} className={clsx(isCurrent && 'ring-2 ring-hay')} />
               <span className="flex max-w-[calc(var(--card-w)*1.1)] items-center gap-1 truncate text-[10px] font-semibold text-mist">
                 {owner && <Avatar id={owner.avatar} size={14} />}
-                <span className="truncate">{pc.playerId === selfId ? 'You' : owner?.name}</span>
+                <span className="truncate">{pc.playerId === selfId ? t('You') : owner?.name}</span>
               </span>
             </motion.div>
           );
@@ -281,6 +285,7 @@ function BoardRow({
 }) {
   const penalty = rowPenalty(cards);
   const full = cards.length >= MAX_ROW_LENGTH;
+  const t = useT();
   return (
     <div className="relative flex items-center gap-1.5 sm:gap-2.5">
       <div
@@ -288,7 +293,7 @@ function BoardRow({
           'flex w-9 shrink-0 flex-col items-center justify-center rounded-xl py-1.5 sm:w-11',
           penalty >= 10 ? 'bg-bull/25 text-white' : 'bg-black/25 text-mist',
         )}
-        title={`Row ${index + 1}: ${penalty} bullheads`}
+        title={t('Row {n}: {p} bullheads', { n: index + 1, p: penalty })}
       >
         <Bullhead size={14} className={penalty >= 10 ? 'text-bull' : 'text-fog'} />
         <span className="font-display text-sm font-bold tabular">{penalty}</span>
@@ -328,7 +333,7 @@ function BoardRow({
           className="absolute inset-[-4px] z-10 flex items-center justify-end rounded-2xl border-2 border-dashed border-hay bg-hay/10 pr-3 animate-pulse-ring"
         >
           <span className="flex items-center gap-1 rounded-full bg-hay px-3 py-1 text-xs font-extrabold text-ink-950 shadow-lg sm:text-sm">
-            Take · {penalty} <Bullhead size={12} />
+            {t('Take')} · {penalty} <Bullhead size={12} />
           </span>
         </motion.button>
       )}
@@ -352,34 +357,41 @@ function StatusLine({
   current: { playerId: string; card: Card } | undefined;
 }) {
   const { room, self } = snapshot;
-  const nameOf = (id: string) => (id === self.playerId ? 'You' : byId.get(id)?.name ?? 'Someone');
+  const t = useT();
+  const mine = (id: string) => id === self.playerId;
+  const nameOf = (id: string) => byId.get(id)?.name ?? t('Someone');
   let text: React.ReactNode = '';
   let tone: 'normal' | 'alert' | 'good' = 'normal';
 
   if (room.phase === 'selecting') {
     const waiting = room.players.filter((p) => !p.hasPlayed);
     if (self.playerId && self.selected === null) {
-      text = 'Choose a card to play';
+      text = t('Choose a card to play');
       tone = 'good';
     } else if (waiting.length) {
-      text = `Waiting for ${waiting.length === 1 ? nameOf(waiting[0].id) : `${waiting.length} players`}…`;
+      text = waiting.length === 1 ? t('Waiting for {name}…', { name: nameOf(waiting[0].id) }) : t('Waiting for {n} players…', { n: waiting.length });
     }
   } else if (room.phase === 'revealing') {
-    text = 'Cards revealed — lowest goes first';
+    text = t('Cards revealed — lowest goes first');
   } else if (room.phase === 'choosingRow' && choosing && current) {
     if (iMustChoose) {
       text = (
         <span className="flex items-center gap-1.5">
-          <IconLowCard size={16} /> Your {current.card.value} is lower than every row — pick a row to take
+          <IconLowCard size={16} /> {t('Your {v} is lower than every row — pick a row to take', { v: current.card.value })}
         </span>
       );
       tone = 'alert';
-    } else text = `${choosing.name}’s ${current.card.value} is too low — they’re picking a row to take`;
+    } else text = t('{name}’s {v} is too low — they’re picking a row to take', { name: choosing.name, v: current.card.value });
   } else if (room.phase === 'resolving' && room.lastEvent) {
     const e = room.lastEvent;
-    if (e.type === 'place') text = `${nameOf(e.playerId)} ${e.playerId === self.playerId ? 'place' : 'places'} ${e.card.value} on row ${e.row + 1}`;
+    if (e.type === 'place')
+      text = mine(e.playerId)
+        ? t('You place {v} on row {r}', { v: e.card.value, r: e.row + 1 })
+        : t('{name} places {v} on row {r}', { name: nameOf(e.playerId), v: e.card.value, r: e.row + 1 });
     if (e.type === 'take') {
-      text = `${nameOf(e.playerId)} ${e.playerId === self.playerId ? 'take' : 'takes'} row ${e.row + 1} · +${e.penalty} bullheads`;
+      text = mine(e.playerId)
+        ? t('You take row {r} · +{p} bullheads', { r: e.row + 1, p: e.penalty })
+        : t('{name} takes row {r} · +{p} bullheads', { name: nameOf(e.playerId), r: e.row + 1, p: e.penalty });
       tone = 'alert';
     }
   }
@@ -411,6 +423,7 @@ function StatusLine({
 function Hand({ hand, selected, canPlay, theme, onPlay }: { hand: Card[]; selected: number | null; canPlay: boolean; theme: string; onPlay: (v: number) => void }) {
   const [pick, setPick] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const t = useT();
   const [overlap, setOverlap] = useState(0);
 
   useEffect(() => {
@@ -457,15 +470,15 @@ function Hand({ hand, selected, canPlay, theme, onPlay }: { hand: Card[]; select
               className="btn btn-primary btn-sm !px-5"
               onClick={() => onPlay(pick)}
             >
-              Play {pick}
+              {t('Play {v}', { v: pick })}
             </motion.button>
           ) : selected !== null ? (
             <motion.span key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="chip !text-mint">
-              <IconCheck size={12} /> You played {selected}
+              <IconCheck size={12} /> {t('You played {v}', { v: selected })}
             </motion.span>
           ) : canPlay ? (
             <motion.span key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-fog">
-              Tap a card, then tap again to play
+              {t('Tap a card, then tap again to play')}
             </motion.span>
           ) : null}
         </AnimatePresence>
@@ -496,7 +509,7 @@ function Hand({ hand, selected, canPlay, theme, onPlay }: { hand: Card[]; select
                 }}
                 className={clsx('relative shrink-0 rounded-[10px] focus-visible:outline-offset-4', i > 0 && 'ml-[calc(6px-var(--overlap))]')}
                 style={{ zIndex: isPick ? 20 : i }}
-                aria-label={`Card ${card.value}`}
+                aria-label={t('Card {v}', { v: card.value })}
               >
                 <GameCard
                   card={card}
@@ -558,8 +571,9 @@ function TimerPill({ seconds, total, urgent }: { seconds: number; total: number;
 
 function MuteButton() {
   const [muted, setMuted] = useMuted();
+  const t = useT();
   return (
-    <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setMuted(!muted)} aria-label={muted ? 'Unmute' : 'Mute'}>
+    <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setMuted(!muted)} aria-label={muted ? t('Unmute') : t('Mute')}>
       {muted ? <IconMute size={17} /> : <IconVolume size={17} />}
     </button>
   );
@@ -567,9 +581,10 @@ function MuteButton() {
 
 function EmoteButton({ onEmote }: { onEmote: (id: string) => void }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
   return (
     <div className="relative">
-      <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setOpen((o) => !o)} aria-label="Send a reaction" aria-expanded={open}>
+      <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setOpen((o) => !o)} aria-label={t('Send a reaction')} aria-expanded={open}>
         <IconChat size={17} />
       </button>
       <AnimatePresence>
@@ -590,7 +605,7 @@ function EmoteButton({ onEmote }: { onEmote: (id: string) => void }) {
                   setOpen(false);
                 }}
               >
-                {e.label}
+                {t(e.label)}
               </button>
             ))}
           </motion.div>

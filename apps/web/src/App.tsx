@@ -9,6 +9,8 @@ import { Leaderboard } from './pages/Leaderboard';
 import { Rules } from './pages/Rules';
 import { Privacy, Terms } from './pages/Legal';
 import { artUrl } from './art/Art';
+import { useT } from './i18n';
+import { LANDINGS, Landing } from './pages/Landing';
 
 function SiteLayout() {
   const { pathname } = useLocation();
@@ -26,6 +28,17 @@ function SiteLayout() {
   );
 }
 
+function NotFound() {
+  const t = useT();
+  return (
+    <div className="mx-auto max-w-md px-4 py-24 text-center">
+      <h1 className="font-display text-4xl font-bold">{t('Lost in the pasture')}</h1>
+      <p className="mt-2 text-fog">{t('That page doesn’t exist.')}</p>
+      <Link to="/" className="btn btn-primary mt-6">{t('Go home')}</Link>
+    </div>
+  );
+}
+
 export default function App() {
   const bg = artUrl('background-home');
   return (
@@ -39,17 +52,14 @@ export default function App() {
           <Route path="plus/success" element={<PlusSuccess />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="rules" element={<Rules />} />
+          {LANDINGS.map((l) => (
+            <Route key={l.path} path={l.path.slice(1)} element={<Landing content={l} />} />
+          ))}
           <Route path="privacy" element={<Privacy />} />
           <Route path="terms" element={<Terms />} />
           <Route
             path="*"
-            element={
-              <div className="mx-auto max-w-md px-4 py-24 text-center">
-                <h1 className="font-display text-4xl font-bold">Lost in the pasture</h1>
-                <p className="mt-2 text-fog">That page doesn’t exist.</p>
-                <Link to="/" className="btn btn-primary mt-6">Go home</Link>
-              </div>
-            }
+            element={<NotFound />}
           />
         </Route>
       </Routes>
