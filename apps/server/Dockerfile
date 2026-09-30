@@ -4,7 +4,8 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY . .
-RUN npm ci --ignore-scripts && npm run build -w @take6/server && npm prune --omit=dev --ignore-scripts
+RUN npm ci --ignore-scripts && npm run build -w @take6/server && npm prune --omit=dev --ignore-scripts \
+  && mkdir -p apps/server/node_modules
 
 FROM node:22-bookworm-slim
 WORKDIR /app
@@ -13,6 +14,8 @@ ENV NODE_ENV=production
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/server/package.json ./apps/server/package.json
+# npm may nest some server deps here instead of hoisting them to the root.
+COPY --from=build /app/apps/server/node_modules ./apps/server/node_modules
 COPY --from=build /app/apps/server/prisma ./apps/server/prisma
 COPY --from=build /app/apps/server/dist ./apps/server/dist
 WORKDIR /app/apps/server
