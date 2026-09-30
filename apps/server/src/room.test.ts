@@ -56,22 +56,25 @@ describe('Room', () => {
     const room = new Room(io, 'LOW', { maxPlayers: 2, turnSeconds: 60 }, { onGameEnd: () => {}, onClose: () => {} });
     room.join('a', guest(1));
     room.join('b', guest(2));
-    room.startBy('a');
     let sawChoice = false;
-    for (let i = 0; i < 4000 && room.snapshotFor('a').room.phase !== 'gameEnd'; i++) {
-      const snap = room.snapshotFor('a').room;
-      for (const sid of ['a', 'b']) {
-        const self = room.snapshotFor(sid).self;
-        if (snap.phase === 'selecting' && self.selected === null && self.hand.length) room.play(sid, self.hand[0].value);
-        if (snap.phase === 'choosingRow' && snap.choosingPlayerId === self.playerId) {
-          sawChoice = true;
-          room.chooseRow(sid, 3);
+    // A low-card choice depends on the deal, so replay (via rematch) until one happens.
+    for (let game = 0; game < 5 && !sawChoice; game++) {
+      if (game > 0) room.rematch('a');
+      room.startBy('a');
+      for (let i = 0; i < 4000 && room.snapshotFor('a').room.phase !== 'gameEnd'; i++) {
+        const snap = room.snapshotFor('a').room;
+        for (const sid of ['a', 'b']) {
+          const self = room.snapshotFor(sid).self;
+          if (snap.phase === 'selecting' && self.selected === null && self.hand.length) room.play(sid, self.hand[0].value);
+          if (snap.phase === 'choosingRow' && snap.choosingPlayerId === self.playerId) {
+            sawChoice = true;
+            room.chooseRow(sid, 3);
+          }
         }
+        await vi.advanceTimersByTimeAsync(250);
       }
-      await vi.advanceTimersByTimeAsync(250);
+      expect(room.snapshotFor('a').room.phase).toBe('gameEnd');
     }
-    expect(room.snapshotFor('a').room.phase).toBe('gameEnd');
-    // Always playing the lowest card makes a low-card choice almost certain over 10 turns.
     expect(sawChoice).toBe(true);
   });
 
