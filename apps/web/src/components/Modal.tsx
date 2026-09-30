@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { IconClose } from '../art/icons';
 
@@ -23,7 +24,10 @@ export function Modal({
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  return (
+  // Portal to <body>: ancestors with backdrop-filter/transform (e.g. the sticky header)
+  // would otherwise become the containing block and clip this "fixed" overlay.
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -52,6 +56,7 @@ export function Modal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

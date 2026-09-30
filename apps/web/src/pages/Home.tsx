@@ -3,12 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { makeCard, type PublicRoomSummary } from '@take6/shared';
 import { HeroArt } from '../art/Illustrations';
-import { IconArrowRight, IconSparkle, IconTakeRow } from '../art/icons';
+import { IconArrowRight, IconTakeRow } from '../art/icons';
 import { AdSlot } from '../components/AdSlot';
 import { GameCard } from '../components/GameCard';
 import { request, useSession } from '../state/session';
 import { api } from '../lib/api';
-import { BRAND } from '../brand';
 import { useLang } from '../i18n';
 
 export function Home() {
@@ -172,22 +171,6 @@ export function Home() {
         </div>
       </section>
 
-      {!session.isPlus && (
-        <section className="mx-auto mt-10 max-w-6xl px-4">
-          <Link
-            to="/plus"
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-hay/20 bg-hay/[0.06] px-4 py-3 text-sm transition hover:bg-hay/10"
-          >
-            <span className="flex items-center gap-2 text-mist">
-              <IconSparkle size={15} className="text-hay" />
-              <span>
-                <b className="text-hay">{BRAND.plus}</b> · {t('No ads. Gorgeous decks. Two exclusive bulls.')}
-              </span>
-            </span>
-            <IconArrowRight size={16} className="shrink-0 text-hay transition group-hover:translate-x-0.5" />
-          </Link>
-        </section>
-      )}
 
     </div>
   );
