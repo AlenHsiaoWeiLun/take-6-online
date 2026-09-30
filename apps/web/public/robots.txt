@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /play/
+Disallow: /plus/success
+
+Sitemap: https://bullheadsonline.com/sitemap.xml

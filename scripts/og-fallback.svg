@@ -8,10 +8,10 @@
   <rect width="1200" height="630" fill="url(#g1)"/>
   <rect width="1200" height="630" fill="url(#g2)"/>
   <g font-family="Helvetica Neue, Arial, sans-serif">
-    <text x="80" y="130" fill="#9AA1B1" font-size="26" font-weight="700" letter-spacing="6">TAKE 6 ONLINE</text>
+    <text x="80" y="130" fill="#9AA1B1" font-size="26" font-weight="700" letter-spacing="6">BULLHEADS ONLINE</text>
     <text x="80" y="245" fill="#ECEBE8" font-size="92" font-weight="800" letter-spacing="-3">Don’t take</text>
     <text x="80" y="345" fill="#ECEBE8" font-size="92" font-weight="800" letter-spacing="-3">the <tspan fill="#E5484D">sixth</tspan> card.</text>
-    <text x="82" y="420" fill="#9AA1B1" font-size="30">Free multiplayer bullhead card game · 2–10 players</text>
+    <text x="82" y="420" fill="#9AA1B1" font-size="30">Free online bullhead card game · 2–10 players</text>
     <rect x="80" y="470" width="250" height="68" rx="18" fill="#E5484D"/>
     <text x="205" y="515" fill="#fff" font-size="28" font-weight="700" text-anchor="middle">Play free</text>
   </g>

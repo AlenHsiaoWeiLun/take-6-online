@@ -9,7 +9,7 @@ export function Rules() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <div className="eyebrow">How to play</div>
-      <h1 className="mt-1 font-display text-4xl font-extrabold tracking-tight">The rules in two minutes</h1>
+      <h1 className="mt-1 font-display text-4xl font-extrabold tracking-tight">Bullheads rules in two minutes</h1>
       <p className="mt-3 text-lg text-fog">Collect as few bullheads as possible. That’s it — the rest is timing and nerve.</p>
 
       <Section title="The deck">
@@ -57,6 +57,30 @@ export function Rules() {
 
       <Section title="Online etiquette">
         <p>Each turn has a timer set by the host. If you run out of time or drop connection, a cautious bot plays for you until you’re back.</p>
+      </Section>
+
+      <Section title="FAQ">
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-white">Is this the same as 6 nimmt! or Take 5?</h3>
+            <p className="mt-1">
+              Bullheads uses the same classic 104-card rules, so if you know 6 nimmt!, Take 5 or Take 6, you already know how to play.
+              Bullheads is an independent game and is not affiliated with or endorsed by AMIGO Spiele, who publish 6 nimmt!®.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold text-white">Is it free?</h3>
+            <p className="mt-1">Yes. Everything that affects play is free. The optional Plus upgrade removes ads and adds cosmetic card styles and characters.</p>
+          </div>
+          <div>
+            <h3 className="font-semibold text-white">How many people can play?</h3>
+            <p className="mt-1">2 to 10 players per table. Empty seats can be filled with bots, and you can play solo against bots any time.</p>
+          </div>
+          <div>
+            <h3 className="font-semibold text-white">Do I need to download anything?</h3>
+            <p className="mt-1">No. It runs in any modern browser on phones, tablets and computers. Share a 4-letter room code and friends can join instantly.</p>
+          </div>
+        </div>
       </Section>
 
       <div className="mt-10">

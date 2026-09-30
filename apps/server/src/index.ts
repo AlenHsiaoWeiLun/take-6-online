@@ -28,7 +28,7 @@ app.use(stripeWebhook(rooms));
 app.use(express.json({ limit: '32kb' }));
 app.use(apiRoutes(rooms));
 app.use(billingRoutes(rooms));
-app.get('/', (_req, res) => res.type('text').send('Take 6 Online game server'));
+app.get('/', (_req, res) => res.type('text').send('Bullheads Online game server'));
 
 app.use((error: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('[http]', error);

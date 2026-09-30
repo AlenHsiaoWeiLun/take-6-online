@@ -1,8 +1,8 @@
-# Take 6 Online
+# Bullheads Online
 
 A free, ad-supported multiplayer version of the bullhead card game (2–10 players), with a one-time **Plus** upgrade. English UI, mobile-first, playable in the browser.
 
-> ⚠️ **Before launching commercially:** "Take 6!" and "6 nimmt!" are trademarks of AMIGO Spiele. Game rules can't be owned, but names and trade dress can. Rename the product in [`apps/web/src/brand.ts`](apps/web/src/brand.ts) (plus the `<title>` in `apps/web/index.html`) before you run ads or take payments. See [docs/LAUNCH.md](docs/LAUNCH.md#0-pick-a-name).
+Live at **bullheadsonline.com**. The game uses the classic 104-card rules known from 6 nimmt!®, but it is an independent product: never use AMIGO's names, logo or card art as branding. The brand lives in [`apps/web/src/brand.ts`](apps/web/src/brand.ts).
 
 ## What's inside
 

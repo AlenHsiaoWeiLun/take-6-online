@@ -1,7 +1,7 @@
 import type { SVGProps } from 'react';
 
 /**
- * Take 6 icon set — 24px grid, 1.8px strokes, rounded joins.
+ * Bullheads icon set — 24px grid, 1.8px strokes, rounded joins.
  * Game-specific glyphs (bullhead, row-take, low-card) are drawn to match the generic UI ones.
  */
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };

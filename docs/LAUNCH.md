@@ -91,7 +91,7 @@ In **DNS → Records**:
 
 ## 6. Stripe (Plus)
 
-1. **Product catalogue → Add product**: "Take 6 Plus" (or your brand), with a **one-time** price, e.g. US$4.99. Copy the `price_…` ID into `STRIPE_PRICE_PLUS`.
+1. **Product catalogue → Add product**: "Bullheads Plus", with a **one-time** price, e.g. US$4.99. Copy the `price_…` ID into `STRIPE_PRICE_PLUS`.
 2. **Developers → API keys**: copy the secret key into `STRIPE_SECRET_KEY`.
 3. **Developers → Webhooks → Add endpoint**: `https://api.example.com/api/stripe/webhook` with the events
    `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `charge.refunded`.

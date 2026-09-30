@@ -27,7 +27,7 @@ export function Lobby({ snapshot, clockOffset }: { snapshot: RoomSnapshot; clock
       /* clipboard blocked */
     }
   };
-  const share = () => navigator.share?.({ title: 'Join my Take 6 table', text: `Room code ${room.code}`, url: link }).catch(() => {});
+  const share = () => navigator.share?.({ title: 'Join my Bullheads table', text: `Room code ${room.code}`, url: link }).catch(() => {});
   const set = (patch: Partial<RoomSettings>) => socket?.emit('room:settings', patch);
   const start = () =>
     socket?.emit('game:start', (res) => setStartError(res.ok ? null : res.error));

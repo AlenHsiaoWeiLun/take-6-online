@@ -74,7 +74,7 @@ export function Home() {
             Don’t take the <span className="text-bull">sixth</span> card.
           </h1>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-fog">
-            The quick, sneaky bullhead card game. Invite friends to a private table, drop into a public match, or practise against sharp bots.
+            The quick, sneaky bullhead card game — the same 104-card rules as 6 nimmt! and Take 5. Invite friends to a private table, drop into a public match, or practise against sharp bots.
           </p>
 
           <div className="panel mt-8 max-w-md p-4 sm:p-5">
