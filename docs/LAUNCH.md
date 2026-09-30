@@ -8,6 +8,24 @@ Throughout this guide, `play.example.com` is the website and `api.example.com` i
 
 ---
 
+## Current setup (InsForge)
+
+The live stack is **Vercel** (website) + **InsForge** (Postgres, sign-in, game server on InsForge Compute / Fly.io, region `sin`).
+
+| Piece | Where |
+|---|---|
+| Website | `https://bullheads-online.vercel.app` (Vercel project `bullheads-online`) |
+| Game server | InsForge Compute service `bullheads-server` — deploy with `scripts/deploy-server-insforge.sh` |
+| Database | InsForge project `bullheads-online` (`npx @insforge/cli db connection-string`) |
+| Sign-in | InsForge auth: Google + 6-digit email code. The server verifies tokens via `INSFORGE_URL/.well-known/jwks.json` |
+
+**Redeploy the server:** link a folder once (`npx @insforge/cli link --project-id <id>`), keep production secrets in `apps/server/.env.production` (gitignored), then run
+`INSFORGE_PROJECT_DIR=<linked folder> scripts/deploy-server-insforge.sh`. It packages the committed code, applies migrations and ships the image.
+
+**Free-plan limits to watch:** 120 compute hours a month (the server scales to zero when idle, so only active time counts, with a few seconds of cold start on the first visit), 500 MB database, and projects pause after a week of inactivity. Upgrade to Pro, or run the server always-on (`--always-on`), before real traffic arrives.
+
+The Supabase and Railway sections below remain as an alternative path.
+
 ## 0. Pick a name
 
 "Take 6!" and "6 nimmt!" are AMIGO Spiele trademarks. Ad networks and payment processors can suspend accounts over trademark complaints, so launch under your own brand:
