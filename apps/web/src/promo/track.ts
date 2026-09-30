@@ -5,7 +5,7 @@
  */
 export const BPM = 120;
 export const BEAT = 60 / BPM;
-export const DURATION = 18.3;
+export const DURATION = 12.6;
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
@@ -151,7 +151,7 @@ export function scheduleTrack(ac: BaseAudioContext, t0 = 0) {
   // One chord per 2 s bar: confident major at first, minor once the friends show their cards.
   const CH: Record<string, number[]> = { C: [60, 64, 67], G: [59, 62, 67], Am: [57, 60, 64], F: [57, 60, 65] };
   const ROOT: Record<string, number> = { C: 48, G: 43, Am: 45, F: 41 };
-  const BARS = ['C', 'G', 'Am', 'F', 'Am', 'Am', 'F', 'G', 'C', 'C'];
+  const BARS = ['C', 'G', 'Am', 'F', 'C', 'C', 'C'];
   const chordAt = (s: number) => BARS[Math.min(BARS.length - 1, Math.floor(s / 2 + 1e-6))];
   const loop = (from: number, to: number, step: number, fn: (s: number, i: number) => void) => {
     for (let i = 0, s = from; s < to - 1e-6; i++, s = from + i * step) fn(Math.round(s * 1000) / 1000, i);
@@ -167,70 +167,78 @@ export function scheduleTrack(ac: BaseAudioContext, t0 = 0) {
   const bassline = (from: number, to: number, k = 1) => loop(from, to, BEAT / 2, (s, i) => bass(s, ROOT[chordAt(s)] + (i % 2 ? 12 : 0), 0.2, k));
   const stabs = (from: number, to: number) => loop(from, to, BEAT / 2, (s, i) => i % 2 === 1 && stab(s, CH[chordAt(s)]));
 
-  // ---------------------------------------------------------------- 0–5 · "nailed it": relaxed, major, tidy
-  drums(0, 5, { halfTime: true });
-  bassline(0, 5, 0.55);
-  loop(0, 5, BEAT, (s, i) => pluck(s, CH[chordAt(s)][i % 3] + 12, 0.8));
+  // ---------------------------------------------------------------- 0–1.5 · close-up: "can't lose"
+  drums(0, 2.5, { halfTime: true });
+  bassline(0, 2.5, 0.55);
+  loop(0, 2.5, BEAT, (s, i) => pluck(s, CH[chordAt(s)][i % 3] + 12, 0.8));
+  kick(0.25, 1.1);
   kick(0.5, 1.1);
   clap(0.5, 1.1);
-  osc(T(1.0), 0.18, 'square', hz(72), hz(84), 0.06, 0.003, 3000);
-  loop(2.0, 3.0, 1 / 14, (s, i) => pluck(s, [72, 74, 76, 79, 81, 84, 86][i % 7] + (i >= 7 ? 12 : 0), 0.55));
-  [3.0, 3.5].forEach((s) => pluck(s, 88, 1.1));
-  tick(3.5, 0.8);
-  tick(4.0, 2.2);
-  thock(4.0, 8);
-  whoosh(4.02, 0.26, true);
-  [4.5, 4.625, 4.75].forEach((s, i) => thock(s, i));
-
-  // ---------------------------------------------------------------- 5–9.5 · "your friends:" minor, closer, tighter
-  crash(5.0, 0.5);
-  drums(5.0, 7.0, { claps: false, kickK: 0.9 });
-  osc(T(5.0), 4.4, 'sawtooth', hz(33), hz(33), 0.05, 0.6, 400);
-  loop(5.0, 7.0, BEAT / 2, (s) => bass(s, 45, 0.2, 0.75));
-  [6.0, 6.5, 7.0].forEach((s, i) => {
+  // ---------------------------------------------------------------- 1.5–2.5 · pull back, the projection lands third
+  whoosh(1.5, 0.25);
+  loop(1.75, 2.0, 1 / 32, (s, i) => pluck(s, [76, 79, 81, 84, 86, 88, 91, 93][i % 8], 0.55));
+  pluck(2.0, 91, 1.2);
+  thock(2.25, 8);
+  // ---------------------------------------------------------------- 2.5–4.75 · the friends turn their cards over
+  [2.5, 2.625, 2.75].forEach((s, i) => thock(s, i));
+  crash(2.5, 0.4);
+  osc(T(2.5), 3.0, 'sawtooth', hz(33), hz(33), 0.05, 0.4, 400);
+  drums(2.5, 4.0, { claps: false, kickK: 0.9 });
+  loop(2.5, 4.0, BEAT / 2, (s) => bass(s, 45, 0.2, 0.75));
+  [3.0, 3.5].forEach((s, i) => {
     whoosh(s - 0.14, 0.14, true);
     kick(s, 1.15);
     snare(s, 0.7 + i * 0.1);
-    stab(s, CH.Am.map((m) => m + 12 * (i === 2 ? 1 : 0)), 0.3, 1.2 + i * 0.3);
+    stab(s, CH.Am, 0.25, 1.2 + i * 0.3);
+    pluck(s + 0.04, 84 + i * 3, 1.3);
   });
-  // the reveal goes wrong: glitch + a sour chord
-  loop(7.0, 7.12, 0.02, (s, i) => noise(T(s), 0.018, 0.3, 'bandpass', 1200 + i * 900, 3));
-  stab(7.02, [58, 61, 65], 0.5, 1.5);
-  [7.25, 7.33, 7.75, 7.83].forEach((s, i) => kick(s, i % 2 ? 0.5 : 0.8));
-  [8.0, 8.25, 8.5].forEach((s, i) => {
-    kick(s, 1);
-    snare(s, 0.6);
+  // 49: the reveal goes wrong — hit, glitch, sour chord; then the cut to your eyes
+  whoosh(3.86, 0.14, true);
+  kick(4.0, 1.3);
+  snare(4.0, 1);
+  crash(4.0, 0.7);
+  loop(4.0, 4.12, 0.02, (s, i) => noise(T(s), 0.018, 0.3, 'bandpass', 1200 + i * 900, 3));
+  stab(4.02, [58, 61, 65], 0.5, 1.6);
+  osc(T(4.25), 0.45, 'sawtooth', hz(33), hz(31), 0.4, 0.004, 500);
+  kick(4.25, 1.1);
+  [4.5, 4.58].forEach((s, i) => kick(s, i ? 0.5 : 0.8));
+  // ---------------------------------------------------------------- 4.75–6 · cards rush in, the sixth hangs, a dropped beat
+  [4.75, 4.875, 5.0].forEach((s, i) => {
     thock(s, 3 + i);
+    snare(s, 0.55);
   });
-  whoosh(8.62, 0.3, true);
-  loop(8.75, 9.5, BEAT / 2, (s) => tick(s, 1.3));
-  riser(8.75, 0.75, 1);
-  // 9.5–10.0: the dropped beat. Nothing.
-
-  // ---------------------------------------------------------------- 10 · slam, vacuum, +9
-  boom(10.0, 1.3);
-  kick(10.0, 1.3);
-  noise(T(10.2), 0.5, 0.32, 'bandpass', 5000, 1.2, 350);
-  [0, 1, 2, 3, 4].forEach((c) => thock(10.2 + c * 0.045 + 0.35, 5 + c));
-  for (let k = 0; k < 9; k++) coin(10.55 + k * 0.05, k);
-  snare(11.0, 1);
-  crash(11.0);
-  moo(11.05);
-  drums(11.0, 15.0, { hats16: true });
-  bassline(11.0, 15.0, 1.05);
-  stabs(11.0, 15.0);
-  // friends laughing, then the pile of cards lands on you
-  [13.0, 13.25, 13.5].forEach((s, i) => [0, 0.06, 0.12].forEach((d, j) => pluck(s + d, 88 - i * 2 - j * 3, 1.1)));
-  loop(13.5, 14.0, 1 / 16, (s, i) => thock(s, i));
-
-  // ---------------------------------------------------------------- 15–18.3 · logo, one more round
-  boom(15.0, 1.1);
-  stab(15.0, [60, 64, 67, 72], 1.1, 1.6);
-  drums(15.5, 17.5, { kickK: 0.85 });
-  bassline(15.5, 17.5, 0.7);
-  loop(15.5, 17.5, BEAT, (s, i) => pluck(s, CH.C[i % 3] + 12, 0.7));
-  boom(17.5, 0.6);
-  stab(17.5, [60, 64, 67, 72], 0.8, 1.3);
+  whoosh(5.0, 0.35, true);
+  loop(5.0, 5.5, BEAT / 4, (s, i) => tick(s, 1 + i * 0.2));
+  riser(5.0, 0.5, 1);
+  // 5.5–6.0: nothing.
+  // ---------------------------------------------------------------- 6 · slam; the row smacks into you and buries you
+  boom(6.0, 1.3);
+  kick(6.0, 1.3);
+  [0, 1, 2, 3, 4].forEach((c) => {
+    thock(6.45 + c * 0.06, 5 + c);
+    snare(6.45 + c * 0.06, 0.45);
+  });
+  for (let k = 0; k < 9; k++) coin(6.55 + k * 0.05, k);
+  snare(7.0, 1);
+  crash(7.0);
+  moo(7.05);
+  drums(7.0, 8.5, { hats16: true });
+  bassline(7.0, 8.5, 1.05);
+  stabs(7.0, 8.5);
+  [7.5, 7.75, 8.0].forEach((s, i) => [0, 0.06, 0.12].forEach((d, j) => pluck(s + d, 88 - i * 2 - j * 3, 1.1)));
+  riser(8.1, 0.4, 0.8);
+  // ---------------------------------------------------------------- 8.5–12.6 · horns burst out → logo, play free
+  kick(8.5, 1.2);
+  crash(8.5, 0.7);
+  whoosh(8.5, 0.45);
+  boom(9.0, 1.1);
+  stab(9.0, [60, 64, 67, 72], 1.1, 1.6);
+  drums(9.5, 12.0, { kickK: 0.85 });
+  bassline(9.5, 12.0, 0.7);
+  loop(9.5, 12.0, BEAT, (s, i) => pluck(s, CH.C[i % 3] + 12, 0.7));
+  clap(10.0, 1.2);
+  boom(12.0, 0.6);
+  stab(12.0, [60, 64, 67, 72], 0.5, 1.3);
 }
 
 /** Renders the whole soundtrack offline and returns a 16-bit stereo WAV. */
