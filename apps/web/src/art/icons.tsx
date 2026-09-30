@@ -207,3 +207,10 @@ export const IconSettings = (p: IconProps) => (
     <circle cx="10" cy="17" r="2.2" />
   </Base>
 );
+
+export const IconPencil = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M4 20h4L19 9l-4-4L4 16v4Z" />
+    <path d="m13.5 6.5 4 4" />
+  </Base>
+);

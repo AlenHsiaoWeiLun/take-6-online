@@ -54,7 +54,7 @@ export function Home() {
   return (
     <div>
       {/* First screen = title → one line → two buttons → the table. Everything else waits below the fold. */}
-      <section className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-6xl content-center items-center gap-10 px-4 py-8 md:grid-cols-[1fr_1fr] md:gap-16">
+      <section className="mx-auto grid min-h-[calc(100svh-4rem)] max-w-6xl content-start items-center gap-10 px-4 pb-10 pt-8 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:gap-10 md:pb-20 md:pt-[9vh]">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <h1 className="font-display text-[2.6rem] font-extrabold leading-[1.02] tracking-tight sm:text-[3.3rem] lg:text-[4rem]">
             {lang === 'zh' ? (
@@ -107,22 +107,20 @@ export function Home() {
               <IconClose size={14} /> {error}
             </p>
           )}
-          <p className="mt-4 text-sm text-fog">{t('No sign-up. Share the link and play.')}</p>
+          <p className="mt-3 text-sm text-fog">{t('No sign-up. Share the link and play.')}</p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fog">
-            <span>{t('Just want to try it?')}</span>
-            <button className="inline-flex items-center gap-1.5 font-semibold text-mist transition hover:text-white disabled:opacity-40" disabled={!connected || !!busy} onClick={() => quick(true)}>
-              <IconBot size={15} /> {busy === 'bots' ? t('Dealing…') : t('Play the bots')}
+          <div className="mt-7 flex flex-wrap gap-2.5">
+            <button className="btn btn-ghost !px-4 !py-2.5 text-[15px]" disabled={!connected || !!busy} onClick={() => quick(true)}>
+              <IconBot size={18} className="text-fog" /> {busy === 'bots' ? t('Dealing…') : t('Play the bots')}
             </button>
-            <span className="text-white/15" aria-hidden>·</span>
-            <button className="inline-flex items-center gap-1.5 font-semibold text-mist transition hover:text-white disabled:opacity-40" disabled={!connected || !!busy} onClick={() => quick(false)}>
-              <IconGlobe size={15} /> {busy === 'online' ? t('Finding…') : t('Quick match')}
+            <button className="btn btn-ghost !px-4 !py-2.5 text-[15px]" disabled={!connected || !!busy} onClick={() => quick(false)}>
+              <IconGlobe size={18} className="text-fog" /> {busy === 'online' ? t('Finding…') : t('Quick match')}
             </button>
           </div>
           {!connected && <p className="mt-3 text-sm text-fog">{t('Connecting to the game server…')}</p>}
         </motion.div>
 
-        <motion.div className="md:justify-self-end" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
+        <motion.div className="w-full" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
           <HeroArt />
         </motion.div>
       </section>

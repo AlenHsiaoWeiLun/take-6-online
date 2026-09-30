@@ -152,7 +152,7 @@ export function GameOver({
 
       {self.playerId && !user && <p className="mt-4 text-center text-xs text-fog">{t('Sign in from your profile to save wins and climb the leaderboard.')}</p>}
       {!session.isPlus && (
-        <Link to="/plus" className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-hay/90 hover:underline">
+        <Link to="/plus" className="mt-2 flex items-center justify-center gap-1.5 text-xs font-semibold text-fog hover:text-white">
           <IconSparkle size={13} /> {t('Go ad-free with {plus}', { plus: BRAND.plus })}
         </Link>
       )}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { Logo } from '../art/Logo';
-import { IconMusic, IconMusicOff, IconMute, IconSettings, IconSparkle, IconVolume } from '../art/icons';
+import { IconMusic, IconMusicOff, IconMute, IconSettings, IconVolume } from '../art/icons';
 import { Avatar } from './Avatar';
 import { ProfileDialog } from './ProfileDialog';
 import { SignInDialog } from './SignIn';
@@ -65,19 +65,14 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
             </NavLink>
           )}
           <button
-            className="btn btn-ghost btn-sm !px-2.5 font-bold"
+            className="rounded-lg px-2 py-1.5 text-sm font-bold text-fog transition hover:text-white"
             onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')}
             aria-label={lang === 'zh' ? 'Switch to English' : '切換為中文'}
           >
             {lang === 'zh' ? 'EN' : '中'}
           </button>
-          {!session.isPlus && (
-            <Link to="/plus" className="hidden items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-semibold text-hay hover:bg-hay/10 sm:inline-flex">
-              <IconSparkle size={14} /> Plus
-            </Link>
-          )}
           <SettingsMenu
-            links={minimal ? [] : [{ to: '/leaderboard', label: t('Leaderboard') }, { to: '/rules', label: t('Rules') }, { to: '/plus', label: 'Plus' }, { to: '/contact', label: t('Contact') }]}
+            links={minimal ? [] : [{ to: '/leaderboard', label: t('Leaderboard') }, { to: '/rules', label: t('Rules') }, { to: '/contact', label: t('Contact') }]}
             lang={lang}
             onLang={() => setLang(lang === 'zh' ? 'en' : 'zh')}
             muted={muted}
@@ -86,19 +81,19 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
             onMusic={() => setMusic(!music)}
           />
           {authEnabled && !user && (
-            <button className="btn btn-primary btn-sm" onClick={() => setSignInOpen(true)}>
+            <button className="btn btn-outline btn-sm" onClick={() => setSignInOpen(true)}>
               {t('Sign in')}
             </button>
           )}
           <button
             onClick={() => setProfileOpen(true)}
-            className="flex items-center gap-2 rounded-full border border-white/8 bg-white/5 p-1 transition hover:bg-white/10 sm:pr-3"
+            className="flex items-center gap-2 rounded-full border border-white/8 bg-white/5 p-1 transition hover:bg-white/10 lg:pr-3"
           >
             <span className="relative">
               <Avatar id={session.avatar} size={30} ring={session.isPlus ? '#f5b942' : undefined} />
               <span className={clsx('absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-ink-950', connected ? 'bg-mint' : 'bg-fog')} />
             </span>
-            <span className="hidden max-w-[7rem] truncate text-sm font-semibold sm:block">{session.name || t('Set name')}</span>
+            <span className="hidden max-w-[7rem] truncate text-sm font-semibold lg:block">{session.name || t('Set name')}</span>
           </button>
         </div>
       </div>

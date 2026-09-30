@@ -49,7 +49,7 @@ export function Terms() {
 
 function Doc({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <article className="mx-auto max-w-2xl px-4 py-12 leading-relaxed text-mist [&_a]:text-hay [&_a]:underline [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_li]:mt-2 [&_p]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
+    <article className="mx-auto max-w-2xl px-4 py-12 leading-relaxed text-mist [&_a]:text-white [&_a]:underline [&_h2]:mt-8 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_li]:mt-2 [&_p]:mt-3 [&_ul]:list-disc [&_ul]:pl-5">
       <h1 className="font-display text-4xl font-extrabold text-white">{title}</h1>
       <p className="text-sm text-fog">Last updated {new Date(2026, 8, 30).toLocaleDateString('en-US', { dateStyle: 'long' })}</p>
       {children}

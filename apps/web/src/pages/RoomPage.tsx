@@ -81,8 +81,8 @@ function ReconnectBanner() {
   const t = useT();
   return (
     <div className="fixed inset-x-0 top-0 z-[70] flex justify-center p-2" role="status" aria-live="polite">
-      <div className="flex items-center gap-2 rounded-full border border-hay/40 bg-ink-900/95 px-4 py-2 text-sm font-semibold text-hay shadow-xl">
-        <span className="size-2 animate-pulse rounded-full bg-hay" />
+      <div className="flex items-center gap-2 rounded-full border border-white/12 bg-ink-900/95 px-4 py-2 text-sm font-semibold text-mist shadow-xl">
+        <span className="size-2 animate-pulse rounded-full bg-bull" />
         {t('Connection lost — reconnecting. Your seat is kept.')}
       </div>
     </div>

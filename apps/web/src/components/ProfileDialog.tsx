@@ -127,7 +127,7 @@ export function ProfileDialog({ open, onClose }: { open: boolean; onClose: () =>
           })}
         </div>
         {!session.isPlus && (
-          <Link to="/plus" onClick={onClose} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-hay hover:underline">
+          <Link to="/plus" onClick={onClose} className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-mist hover:text-white">
             <IconSparkle size={14} /> {t('Unlock every character and card style with Plus')}
           </Link>
         )}

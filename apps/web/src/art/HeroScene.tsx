@@ -52,8 +52,8 @@ export function HeroScene() {
 
   return (
     <div
-      className="relative mx-auto w-full max-w-[520px] select-none"
-      style={{ '--hw': 'clamp(28px, min(9.5vw, calc((100dvh - 200px) / 7.2)), 60px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
+      className="relative mx-auto w-full max-w-[640px] select-none"
+      style={{ '--hw': 'clamp(28px, min(10.4vw, calc(50vw / 8.6), calc((100dvh - 190px) / 7.4)), 74px)', '--g': 'calc(var(--hw) * 0.1)' } as CSSProperties}
       aria-label={t('A sixth card lands on a full row and the player takes all five cards')}
       role="img"
     >
@@ -172,19 +172,17 @@ export function HeroScene() {
             );
           })}
         </div>
-      </motion.div>
-
-      {/* the payoff: the row lands on "your" score and the bull can't hide its grin */}
-      <div className="relative z-20 mt-3 ml-1 inline-flex items-center gap-2 rounded-xl border border-white/8 bg-ink-900/80 py-1 pl-1 pr-3">
-        <BullMark size={26} mood={exploded ? 'shock' : 'neutral'} />
-        <span className="leading-tight">
-          <span className="block text-xs font-semibold text-mist">{t('You')}</span>
+        {/* the payoff: the row lands on "your" seat, inside the table */}
+        <div className="mt-[var(--g)] flex items-center gap-2 border-t border-white/[0.06] pt-2.5">
+          <BullMark size={24} mood={exploded ? 'shock' : 'neutral'} />
+          <span className="text-xs font-semibold text-mist">{t('You')}</span>
           <span className="flex items-center gap-1 font-display text-base font-extrabold tabular text-white">
             <Bullhead size={13} className="text-bull" />
             <AnimatedNumber value={exploded ? SCORE_BEFORE + PENALTY : SCORE_BEFORE} delay={exploded ? 1.05 : 0} />
           </span>
-        </span>
-      </div>
+        </div>
+      </motion.div>
+
       <AnimatePresence>
         {exploded && (
           <>
@@ -192,21 +190,11 @@ export function HeroScene() {
               key="token"
               className="pointer-events-none absolute left-[3%] top-[27%] z-30 flex items-center gap-1 rounded-full bg-bull px-3 py-1 font-display text-lg font-extrabold text-white shadow-[0_4px_0_#8e1f27]"
               initial={{ opacity: 0, scale: 0.5, y: 0 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.3, 1, 0.8], y: [0, -30, 0, 250], x: [0, 10, 14, 10] }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.5, 1.3, 1, 0.8], top: ['27%', '22%', '27%', '90%'], x: [0, 10, 14, 10] }}
               transition={{ delay: 0.45, duration: 0.9, times: [0, 0.25, 0.5, 1], ease: 'easeInOut' }}
             >
               +{PENALTY} <Bullhead size={16} />
             </motion.span>
-            <motion.div
-              key="bull"
-              className="pointer-events-none absolute bottom-[3%] right-[18%] z-20"
-              initial={{ y: 80, rotate: -20, opacity: 0 }}
-              animate={{ y: 0, rotate: [-20, 8, -3, 0], opacity: 1 }}
-              exit={{ y: 60, opacity: 0 }}
-              transition={{ delay: 0.9, type: 'spring', stiffness: 420, damping: 14 }}
-            >
-              <BullMark size="clamp(70px, 18vw, 96px)" mood="smug" />
-            </motion.div>
           </>
         )}
       </AnimatePresence>

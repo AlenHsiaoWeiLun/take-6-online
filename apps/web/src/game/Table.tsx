@@ -29,7 +29,6 @@ import { GameOver, HandSummary } from './GameOver';
 import { artUrl } from '../art/Art';
 import { useT } from '../i18n';
 import { anchors, fx } from '../fx/fx';
-import { colorFor } from './colors';
 
 const feltArt = artUrl('texture-felt');
 
@@ -54,7 +53,6 @@ export function Table({ snapshot, emotes, clockOffset, ratings, log }: Props) {
   const { room, self } = snapshot;
   const me = room.players.find((p) => p.id === self.playerId) ?? null;
   const byId = useMemo(() => new Map(room.players.map((p) => [p.id, p])), [room.players]);
-  const colorOf = useMemo(() => new Map(room.players.map((p, i) => [p.id, colorFor(i)])), [room.players]);
   const secondsLeft = useCountdown(room.deadline, clockOffset);
   const theme = session.cardTheme;
   const wide = useIsWide();
@@ -119,8 +117,8 @@ export function Table({ snapshot, emotes, clockOffset, ratings, log }: Props) {
             </div>
           </div>
           {wide ? (
-            <div className="min-w-0 flex-1">
-              <PlayersBar snapshot={snapshot} emotes={emotes} colorOf={colorOf} />
+            <div className="flex min-w-0 flex-1 justify-center">
+              <StatusLine snapshot={snapshot} byId={byId} choosing={choosing} iMustChoose={iMustChoose} current={current} />
             </div>
           ) : (
             <TurnProgress turn={room.turn} />
@@ -133,27 +131,29 @@ export function Table({ snapshot, emotes, clockOffset, ratings, log }: Props) {
                 urgent={canPlay || iMustChoose}
               />
             )}
-            {me && <ReactionButton onReact={(e) => socket?.emit('game:emote', e)} />}
+            {me && <ReactionButton onReact={(e) => socket?.emit('game:emote', e)} labelled={wide} />}
             <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setPanel('log')} aria-label={t('Round log')} title={t('Round log')}>
               <IconBook size={17} />
+              {wide && <span className="hidden xl:inline">{t('Log')}</span>}
             </button>
-            <button className="btn btn-ghost btn-sm !px-2.5 font-display font-extrabold" onClick={() => setPanel('rules')} aria-label={t('Rules')} title={t('Rules')}>
-              ?
+            <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setPanel('rules')} aria-label={t('Rules')} title={t('Rules')}>
+              <span className="font-display font-extrabold">?</span>
+              {wide && <span className="hidden xl:inline">{t('Rules')}</span>}
             </button>
             <GameSettings />
           </div>
         </div>
 
-        {!wide && <PlayersBar snapshot={snapshot} emotes={emotes} colorOf={colorOf} />}
+        {!wide && <PlayersBar snapshot={snapshot} emotes={emotes} />}
 
         <LayoutGroup>
           <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center-safe gap-2 overflow-y-auto px-2 py-1.5 sm:px-4">
             <div
-              className="felt relative rounded-[1.8rem] px-2.5 pb-3 pt-2 sm:px-5 sm:pb-5 sm:pt-3"
+              className={clsx('felt relative rounded-[1.8rem]', wide ? 'flex items-stretch px-[calc(var(--card-w)*0.3)] py-[calc(var(--card-w)*0.26)]' : 'px-2.5 pb-3 pt-2 sm:px-5 sm:pb-5 sm:pt-3')}
               style={feltArt ? ({ '--felt-art': `url(${feltArt})` } as CSSProperties) : undefined}
             >
-              <PlayedTray snapshot={snapshot} byId={byId} colorOf={colorOf} myPending={myPending} hidden={danger ? danger.card.value : null} />
-              <div className="flex flex-col gap-[calc(var(--card-w)*0.09)]">
+              {!wide && <PlayedTray snapshot={snapshot} byId={byId} myPending={myPending} hidden={danger ? danger.card.value : null} />}
+              <div className="flex flex-col justify-center gap-[calc(var(--card-w)*0.09)]">
                 {room.rows.map((row, r) => (
                   <BoardRow
                     key={r}
@@ -175,12 +175,13 @@ export function Table({ snapshot, emotes, clockOffset, ratings, log }: Props) {
                   />
                 ))}
               </div>
+              {wide && <SeatRail snapshot={snapshot} emotes={emotes} myPending={myPending} hidden={danger ? danger.card.value : null} />}
             </div>
 
-            <StatusLine snapshot={snapshot} byId={byId} choosing={choosing} iMustChoose={iMustChoose} current={current} />
+            {!wide && <StatusLine snapshot={snapshot} byId={byId} choosing={choosing} iMustChoose={iMustChoose} current={current} />}
           </div>
 
-          <div className="safe-bottom relative shrink-0 border-t border-white/6 bg-ink-950/55 px-2 pt-2 backdrop-blur">
+          <div className={clsx('safe-bottom relative shrink-0 px-2', wide ? 'pt-0' : 'border-t border-white/6 bg-ink-950/55 pt-2 backdrop-blur')}>
             {me ? (
               <Hand
                 hand={self.hand}
@@ -339,94 +340,213 @@ function useTableFeedback(snapshot: RoomSnapshot, secondsLeft: number | null, em
 
 // ------------------------------------------------------------------ players
 
-function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emotes: EmoteBubble[]; colorOf: Map<string, string> }) {
-  const { room, self } = snapshot;
-  const t = useT();
+/** Per-player bits shared by the phone bar and the desktop seat rail. */
+function usePlayerState(snapshot: RoomSnapshot, emotes: EmoteBubble[]) {
+  const { room } = snapshot;
   const resolvingId = room.resolvingIndex !== null ? room.played[room.resolvingIndex]?.playerId : null;
   const low = Math.min(...room.players.map((p) => p.score));
   const takerId = room.lastEvent?.type === 'take' ? room.lastEvent.playerId : null;
+  return (p: PublicPlayer) => {
+    const bubble = emotes.find((e) => e.playerId === p.id);
+    const def = bubble ? EMOTES.find((e) => e.id === bubble.emote) : undefined;
+    return {
+      // Gold always means "this is happening now": the card being resolved, the row being chosen.
+      active: p.id === resolvingId || p.id === room.choosingPlayerId,
+      // Only a real lead earns the crown: nobody wears it while everyone is tied.
+      leading: p.score === low && room.players.some((q) => q.score > low),
+      phrase: bubble && def && !def.emoji ? { key: bubble.key, label: def.label } : null,
+      scoreDelay: p.id === takerId ? SCORE_LANDS_S : 0,
+    };
+  };
+}
+
+const anchorRef = (id: string) => (el: HTMLElement | null) => {
+  if (el) anchors.players.set(id, el);
+  else anchors.players.delete(id);
+};
+
+function PhraseBubble({ phrase, className }: { phrase: { key: number; label: string } | null; className?: string }) {
+  const t = useT();
+  return (
+    <AnimatePresence>
+      {phrase && (
+        <motion.span
+          key={phrase.key}
+          initial={{ opacity: 0, y: 8, scale: 0.6 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 600, damping: 20 }}
+          className={clsx('pointer-events-none absolute z-20 whitespace-nowrap rounded-xl bg-paper px-2.5 py-1 text-xs font-extrabold text-ink-950 shadow-xl', className)}
+        >
+          {t(phrase.label)}
+        </motion.span>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/** Phones and tablets: a compact strip of chips above the board. */
+function PlayersBar({ snapshot, emotes }: { snapshot: RoomSnapshot; emotes: EmoteBubble[] }) {
+  const { room, self } = snapshot;
+  const t = useT();
+  const state = usePlayerState(snapshot, emotes);
 
   return (
     <div className="no-scrollbar relative flex shrink-0 gap-1.5 overflow-x-auto px-2.5 py-1.5 sm:justify-center sm:gap-2 sm:px-4">
       {room.players.map((p) => {
-        const color = colorOf.get(p.id)!;
-        const thinking = room.phase === 'selecting' && !p.hasPlayed;
-        const active = p.id === resolvingId || p.id === room.choosingPlayerId;
-        const bubble = emotes.find((e) => e.playerId === p.id);
-        const phrase = bubble && !EMOTES.find((e) => e.id === bubble.emote)?.emoji ? EMOTES.find((e) => e.id === bubble.emote) : null;
-        const leading = p.score === low && room.turn > 1;
+        const { active, leading, phrase, scoreDelay } = state(p);
+        const mine = p.id === self.playerId;
         return (
           <motion.div
             key={p.id}
-            ref={(el) => {
-              if (el) anchors.players.set(p.id, el);
-              else anchors.players.delete(p.id);
-            }}
+            ref={anchorRef(p.id)}
             layout
-            animate={active ? { y: -3, scale: 1.04 } : { y: 0, scale: 1 }}
+            animate={active ? { y: -2, scale: 1.03 } : { y: 0, scale: 1 }}
             transition={{ type: 'spring', stiffness: 500, damping: 26 }}
             className={clsx(
-              'relative flex shrink-0 items-center gap-2 rounded-2xl border py-1.5 pl-1.5 pr-3',
-              active ? 'bg-white/10' : 'bg-white/[0.04]',
+              'relative flex shrink-0 items-center gap-2 rounded-2xl border py-1.5 pl-1.5 pr-3 transition-colors',
+              active ? 'border-hay/70 bg-hay/10' : 'border-white/6 bg-white/[0.03]',
             )}
-            style={{
-              borderColor: active ? color : 'rgb(255 255 255 / .08)',
-              boxShadow: active ? `0 0 0 1px ${color}, 0 8px 24px -8px ${color}` : undefined,
-            }}
           >
             <span className="relative">
-              <span className="block rounded-full p-[1.5px]" style={{ background: color }}>
-                <Avatar id={p.avatar} size={28} className={clsx(!p.connected && 'opacity-40 grayscale')} />
-              </span>
-              {room.phase === 'selecting' && (
-                <AnimatePresence initial={false} mode="popLayout">
-                  <motion.span
-                    key={p.hasPlayed ? 'done' : 'wait'}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    transition={{ type: 'spring', stiffness: 700, damping: 18 }}
-                    className={clsx(
-                      'absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border-2 border-ink-950',
-                      p.hasPlayed ? 'bg-mint text-ink-950' : 'bg-ink-700',
-                    )}
-                  >
-                    {p.hasPlayed ? <IconCheck size={9} strokeWidth={3.5} aria-label={t('Played')} /> : <span className="size-1 animate-pulse rounded-full bg-fog" aria-label={t('Thinking')} />}
-                  </motion.span>
-                </AnimatePresence>
-              )}
-              {leading && (
-                <span className="absolute -left-1.5 -top-2 grid size-4 place-items-center rounded-full bg-hay text-ink-950" title={t('Leader')}>
-                  <IconCrown size={10} strokeWidth={2.4} />
-                </span>
+              <Avatar id={p.avatar} size={28} className={clsx(!p.connected && 'opacity-40 grayscale')} />
+              {room.phase === 'selecting' && p.hasPlayed && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 700, damping: 18 }}
+                  className="absolute -bottom-1 -right-1 grid size-4 place-items-center rounded-full border-2 border-ink-950 bg-mint text-ink-950"
+                >
+                  <IconCheck size={9} strokeWidth={3.5} aria-label={t('Played')} />
+                </motion.span>
               )}
             </span>
             <span className="leading-tight">
-              <span className={clsx('block max-w-[5.5rem] truncate text-[13px] font-bold sm:max-w-[7rem]', thinking ? 'text-mist' : 'text-white')}>
-                {p.id === self.playerId ? t('You') : p.name}
+              <span className="flex max-w-[5.5rem] items-center gap-1 truncate text-[13px] font-bold text-white sm:max-w-[7rem]">
+                <span className="truncate">{mine ? t('You') : p.name}</span>
+                {leading && <IconCrown size={11} className="shrink-0 text-mist" aria-label={t('Leader')} />}
               </span>
-              <span className={clsx('flex min-w-[3.2rem] items-center gap-1 text-sm font-extrabold tabular', leading ? 'text-mint' : 'text-white')}>
-                <Bullhead size={12} className="text-bull" /> <AnimatedNumber value={p.score} delay={p.id === takerId ? SCORE_LANDS_S : 0} />
+              <span className="flex min-w-[3.2rem] items-center gap-1 text-sm font-extrabold tabular text-white">
+                <Bullhead size={12} className="text-bull" /> <AnimatedNumber value={p.score} delay={scoreDelay} />
                 {room.settings.mode === 'classic' && p.handScore > 0 && <span className="font-medium text-fog/70">(+{p.handScore})</span>}
               </span>
             </span>
-
-            <AnimatePresence>
-              {phrase && bubble && (
-                <motion.span
-                  key={bubble.key}
-                  initial={{ opacity: 0, y: 8, scale: 0.6 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -6, scale: 0.9 }}
-                  transition={{ type: 'spring', stiffness: 600, damping: 20 }}
-                  className="absolute left-1/2 top-full z-20 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-xl px-2.5 py-1 text-xs font-extrabold text-ink-950 shadow-xl"
-                  style={{ background: color }}
-                >
-                  {t(phrase.label)}
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <PhraseBubble phrase={phrase} className="left-1/2 top-full mt-1.5 -translate-x-1/2" />
           </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * Desktop: every seat sits on the right edge of the felt with its own card slot, so the card a
+ * player put down is always next to their name — face down while choosing, face up when revealed.
+ */
+function SeatRail({ snapshot, emotes, myPending, hidden }: { snapshot: RoomSnapshot; emotes: EmoteBubble[]; myPending: Card | null; hidden: number | null }) {
+  const { room, self } = snapshot;
+  const t = useT();
+  const state = usePlayerState(snapshot, emotes);
+  const two = room.players.length > 5;
+  const w = two ? 'calc(var(--card-w) * 0.52)' : 'calc(var(--card-w) * 0.66)';
+  const onBoard = new Set(room.rows.flatMap((r) => r.cards.map((c) => c.value)));
+  const selecting = room.phase === 'selecting';
+  const revealing = room.phase === 'revealing';
+
+  return (
+    <div
+      className={clsx(
+        'ml-[calc(var(--card-w)*0.34)] grid content-center gap-y-[calc(var(--card-w)*0.12)] border-l border-white/[0.06] pl-[calc(var(--card-w)*0.3)]',
+        two ? 'grid-cols-2 gap-x-3' : 'grid-cols-1',
+      )}
+      style={{ perspective: 900 }}
+    >
+      {room.players.map((p) => {
+        const { active, leading, phrase, scoreDelay } = state(p);
+        const mine = p.id === self.playerId;
+        const order = room.played.findIndex((x) => x.playerId === p.id);
+        const pc = order >= 0 ? room.played[order] : undefined;
+        const showPlayed =
+          !selecting && !!pc && (room.resolvingIndex === null || order >= room.resolvingIndex) && !onBoard.has(pc.card.value) && pc.card.value !== hidden;
+
+        let slot: React.ReactNode = null;
+        if (selecting && mine && myPending) {
+          slot = (
+            <motion.div key={`card-${myPending.value}`} layoutId={`card-${myPending.value}`} transition={{ layout: { type: 'spring', stiffness: 420, damping: 30 } }}>
+              <GameCard card={myPending} width={w} theme={p.cardTheme} />
+            </motion.div>
+          );
+        } else if (selecting && p.hasPlayed) {
+          slot = (
+            <motion.div key="back" initial={{ y: -24, opacity: 0, rotate: -10 }} animate={{ y: 0, opacity: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 520, damping: 24 }}>
+              <CardBack width={w} theme={p.cardTheme} />
+            </motion.div>
+          );
+        } else if (showPlayed && pc) {
+          slot = (
+            <motion.div
+              key={`card-${pc.card.value}`}
+              layoutId={`card-${pc.card.value}`}
+              exit={{ opacity: 0, transition: { duration: 0 } }}
+              transition={{ layout: { type: 'spring', stiffness: 380, damping: 30 } }}
+              className="relative"
+            >
+              <motion.div
+                className="flip"
+                initial={revealing && !mine ? { rotateY: 180 } : false}
+                animate={{ rotateY: 0 }}
+                transition={{ delay: revealing ? 0.15 + order * 0.11 : 0, duration: 0.42, ease: [0.3, 1.35, 0.5, 1] }}
+              >
+                <div className="face">
+                  <GameCard card={pc.card} width={w} theme={p.cardTheme} style={active ? { boxShadow: '0 0 0 2px #f5b942, 0 12px 20px -10px rgb(0 0 0 / .7)' } : undefined} />
+                </div>
+                <div className="back">
+                  <CardBack width={w} theme={p.cardTheme} />
+                </div>
+              </motion.div>
+              {/* play order: lowest goes first */}
+              <span className="absolute -left-1.5 -top-1.5 z-10 grid size-[18px] place-items-center rounded-full bg-ink-950 text-[10px] font-extrabold text-mist ring-1 ring-white/15">
+                {order + 1}
+              </span>
+            </motion.div>
+          );
+        }
+
+        return (
+          <div
+            key={p.id}
+            ref={anchorRef(p.id)}
+            className={clsx('relative flex items-center gap-2.5 rounded-xl p-1 pr-2 transition-colors', active && 'bg-hay/10 ring-1 ring-hay/60')}
+          >
+            <div className="relative shrink-0" style={{ width: w, height: `calc(${w} * 1.4)` }}>
+              <div className="absolute inset-0 rounded-[calc(var(--card-w)*0.08)] border border-dashed border-white/[0.07]">
+                {selecting && !p.hasPlayed && (
+                  <span className="absolute inset-0 grid place-items-center" aria-label={t('Thinking')}>
+                    <span className="flex gap-0.5">
+                      {[0, 1, 2].map((i) => (
+                        <motion.span key={i} className="size-1 rounded-full bg-white/30" animate={{ opacity: [0.2, 1, 0.2] }} transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2 }} />
+                      ))}
+                    </span>
+                  </span>
+                )}
+              </div>
+              <AnimatePresence mode="popLayout">{slot}</AnimatePresence>
+            </div>
+            <div className="min-w-0 leading-tight">
+              <div className="flex items-center gap-1.5">
+                <Avatar id={p.avatar} size={20} className={clsx('shrink-0', !p.connected && !p.isBot && 'opacity-40 grayscale')} />
+                <span className={clsx('truncate text-[13px] font-bold', two ? 'max-w-[4.5rem]' : 'max-w-[7rem]', mine ? 'text-white' : 'text-mist')}>{mine ? t('You') : p.name}</span>
+                {leading && <IconCrown size={12} className="shrink-0 text-mist" aria-label={t('Leader')} />}
+              </div>
+              <div className="mt-1 flex items-center gap-1 font-display text-lg font-extrabold tabular text-white">
+                <Bullhead size={13} className="text-bull" />
+                <AnimatedNumber value={p.score} delay={scoreDelay} />
+                {room.settings.mode === 'classic' && p.handScore > 0 && <span className="text-xs font-semibold text-fog">(+{p.handScore})</span>}
+              </div>
+              {!p.connected && !p.isBot && <div className="text-[10px] font-semibold text-fog">{t('Away')}</div>}
+            </div>
+            <PhraseBubble phrase={phrase} className="right-1 top-0 -translate-y-full" />
+          </div>
         );
       })}
     </div>
@@ -438,13 +558,11 @@ function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emo
 function PlayedTray({
   snapshot,
   byId,
-  colorOf,
   myPending,
   hidden,
 }: {
   snapshot: RoomSnapshot;
   byId: Map<string, PublicPlayer>;
-  colorOf: Map<string, string>;
   myPending: Card | null;
   /** A card currently hovering over its row (sixth-card suspense) is drawn there, not here. */
   hidden: number | null;
@@ -471,7 +589,7 @@ function PlayedTray({
                 transition={{ layout: { type: 'spring', stiffness: 420, damping: 30 }, y: { repeat: Infinity, duration: 1.6, ease: 'easeInOut' } }}
                 className="relative z-10"
               >
-                <GameCard card={myPending} width={w} theme={p.cardTheme} style={{ boxShadow: `0 0 0 2px ${colorOf.get(p.id)}, 0 14px 22px -10px rgb(0 0 0 / .7)` }} />
+                <GameCard card={myPending} width={w} theme={p.cardTheme} style={{ boxShadow: '0 0 0 2px rgb(255 255 255 / .5), 0 14px 22px -10px rgb(0 0 0 / .7)' }} />
               </motion.div>
             ) : (
               <motion.div
@@ -501,7 +619,6 @@ function PlayedTray({
           const order = room.played.findIndex((x) => x.card.value === pc.card.value);
           const isCurrent = room.resolvingIndex !== null && room.played[room.resolvingIndex]?.card.value === pc.card.value;
           const owner = byId.get(pc.playerId);
-          const color = colorOf.get(pc.playerId) ?? '#fff';
           const mine = pc.playerId === self.playerId;
           return (
             <motion.div
@@ -523,14 +640,14 @@ function PlayedTray({
                     card={pc.card}
                     width={w}
                     theme={owner?.cardTheme}
-                    style={isCurrent ? { boxShadow: `0 0 0 3px ${color}, 0 16px 26px -10px rgb(0 0 0 / .7)` } : undefined}
+                    style={isCurrent ? { boxShadow: '0 0 0 3px #f5b942, 0 16px 26px -10px rgb(0 0 0 / .7)' } : undefined}
                   />
                 </div>
                 <div className="back">
                   <CardBack width={w} theme={owner?.cardTheme} />
                 </div>
               </motion.div>
-              <span className="flex max-w-[calc(var(--card-w)*1.1)] items-center gap-1 truncate text-[10px] font-bold" style={{ color }}>
+              <span className="flex max-w-[calc(var(--card-w)*1.1)] items-center gap-1 truncate text-[10px] font-bold text-mist">
                 {owner && <Avatar id={owner.avatar} size={14} />}
                 <span className="truncate">{mine ? t('You') : owner?.name}</span>
               </span>
@@ -640,14 +757,13 @@ function BoardRow({
         animate={{ scale: 1 }}
         transition={{ type: 'spring', stiffness: 520, damping: 14 }}
         className={clsx(
-          'flex w-[calc(var(--card-w)*0.62)] shrink-0 flex-col items-center justify-center rounded-xl py-1.5 transition-colors',
-          hot ? 'bg-bull text-white' : penalty >= 10 ? 'bg-bull/25 text-white' : 'bg-black/25 text-mist',
+          'flex w-[calc(var(--card-w)*0.5)] shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg py-1 transition-colors',
+          hot ? 'bg-bull text-white' : penalty >= 10 ? 'bg-bull/20 text-white' : 'text-mist',
         )}
         title={t('Row {n}: {p} bullheads', { n: index + 1, p: penalty })}
       >
-        <span className="text-[9px] font-bold uppercase leading-none tracking-wide opacity-70">{t('row')}</span>
-        <span className="font-display text-base font-extrabold leading-tight tabular sm:text-lg">{penalty}</span>
-        <Bullhead size={12} className={hot ? 'text-white' : penalty >= 10 ? 'text-bull' : 'text-fog'} />
+        <Bullhead size={12} className={hot ? 'text-white' : penalty >= 10 ? 'text-bull' : 'text-fog/70'} />
+        <span className="font-display text-[calc(var(--card-w)*0.2)] font-extrabold leading-none tabular">{penalty}</span>
       </motion.div>
 
       <div ref={ref} className="flex gap-[calc(var(--card-w)*0.07)]">
@@ -691,14 +807,14 @@ function BoardRow({
               key={`slot-${i}`}
               className={clsx(
                 'slot relative grid place-items-center transition-colors',
-                isSixth && 'slot-danger',
+                isSixth ? clsx('slot-danger', full && 'slot-danger-live') : i === cards.length ? 'slot-next' : 'slot-blank',
                 target && i === cards.length && '!border-hay !border-solid bg-hay/10',
               )}
             >
               {isSixth && (
-                <span className={clsx('flex flex-col items-center font-display font-extrabold leading-none', full ? 'text-bull' : 'text-bull/45')}>
-                  <span className="text-[calc(var(--card-w)*0.34)]">6</span>
-                  {full && <span className="mt-0.5 text-[calc(var(--card-w)*0.13)] uppercase">{t('Full')}</span>}
+                <span className={clsx('flex flex-col items-center gap-1 font-display font-extrabold leading-none', full ? 'text-bull' : 'text-bull/30')}>
+                  <Bullhead style={{ width: 'calc(var(--card-w) * 0.26)', height: 'calc(var(--card-w) * 0.26)' }} />
+                  {full && <span className="text-center text-[calc(var(--card-w)*0.13)]">{t('Next one takes it')}</span>}
                 </span>
               )}
             </div>
@@ -910,7 +1026,6 @@ function Hand({
   const played = hand.find((c) => c.value === selected) ?? null;
   const hint = hints && picked ? landingHint(picked, rows, t) : null;
   const mid = (inHand.length - 1) / 2;
-  const spread = Math.min(2, 16 / Math.max(1, inHand.length));
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -943,7 +1058,12 @@ function Hand({
             <GameCard card={played} theme={theme} width={22} /> <IconCheck size={12} /> {t('You played {v} — waiting for the others', { v: played.value })}
           </span>
         ) : canPlay ? (
-          <span className="text-sm font-semibold text-hay">{t('Pick a card — tap it, then tap Play')}</span>
+          <>
+            <span className="hidden text-sm font-semibold text-mist sm:inline">{t('Tap a card to pick it')}</span>
+            <button className="btn btn-primary !px-5 !py-2.5" disabled>
+              {t('Play card')}
+            </button>
+          </>
         ) : null}
       </div>
       {hint && (
@@ -958,7 +1078,7 @@ function Hand({
         <AnimatePresence initial={false}>
           {inHand.map((card, i) => {
             const isPick = pick === card.value;
-            const arc = grid ? 0 : Math.min(12, (i - mid) ** 2 * 0.5);
+            const arc = 0;
             return (
               <motion.button
                 key={card.value}
@@ -966,10 +1086,10 @@ function Hand({
                 layoutId={`card-${card.value}`}
                 layout
                 initial={dealing ? { y: -320, x: (mid - i) * 30, rotate: (mid - i) * 12, opacity: 0, scale: 0.5 } : { y: 30, opacity: 0 }}
-                animate={{ y: arc + (isPick ? (grid ? -6 : -18) : 0), x: 0, rotate: grid || isPick ? 0 : (i - mid) * spread, opacity: 1, scale: isPick ? 1.08 : 1 }}
+                animate={{ y: arc + (isPick ? (grid ? -6 : -22) : 0), x: 0, rotate: 0, opacity: 1, scale: isPick ? 1.06 : 1 }}
                 exit={{ opacity: 0, transition: { duration: 0 } }}
                 transition={{ type: 'spring', stiffness: 420, damping: 28, delay: dealing ? i * 0.045 : 0 }}
-                whileHover={canPlay && !isPick && !grid ? { y: arc - 8, rotate: 0 } : undefined}
+                whileHover={canPlay && !isPick && !grid ? { y: arc - 8 } : undefined}
                 drag={canPlay && !grid ? 'y' : false}
                 dragConstraints={{ top: 0, bottom: 0 }}
                 dragElastic={{ top: 0.7, bottom: 0.1 }}
@@ -1133,12 +1253,12 @@ function QuickRules() {
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-fog">{t('Band colour = bullheads: lilac 1 · blue 2 · amber 3 · red 5 · purple 7.')}</p>
+      <p className="mt-3 text-xs text-fog">{t('Band colour = bullheads: grey 1 · sand 2 · orange 3 · red 5 · dark red 7.')}</p>
     </div>
   );
 }
 
-function ReactionButton({ onReact }: { onReact: (id: string) => void }) {
+function ReactionButton({ onReact, labelled = false }: { onReact: (id: string) => void; labelled?: boolean }) {
   const [open, setOpen] = useState(false);
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
@@ -1154,6 +1274,7 @@ function ReactionButton({ onReact }: { onReact: (id: string) => void }) {
     <div ref={ref} className="relative">
       <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setOpen((o) => !o)} aria-label={t('Send a reaction')} aria-expanded={open}>
         <IconSmile size={17} />
+        {labelled && <span className="hidden xl:inline">{t('React')}</span>}
       </button>
       <AnimatePresence>
         {open && (

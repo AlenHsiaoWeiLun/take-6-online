@@ -49,7 +49,7 @@ export function Contact() {
       <div className="panel mt-6 flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <div className="text-xs font-bold uppercase tracking-wider text-fog">{t('Email')}</div>
-          <a href={`mailto:${BRAND.supportEmail}`} className="font-display text-lg font-bold text-hay hover:underline">
+          <a href={`mailto:${BRAND.supportEmail}`} className="font-display text-lg font-bold text-white underline-offset-4 hover:underline">
             {BRAND.supportEmail}
           </a>
         </div>
