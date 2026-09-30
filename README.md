@@ -20,11 +20,10 @@ Live at **bullheadsonline.com**. The game uses the classic 104-card rules known 
 apps/web         React 19 + Vite + Tailwind v4 + Framer Motion    → Vercel
 apps/server      Express 5 + Socket.IO + Prisma + Stripe          → Railway (Docker)
 packages/shared  Rules, protocol types, cosmetics, bot AI (used by both)
-art/prompts.json Image-generation briefs for every asset
-scripts/         generate-art.mjs, smoke-test.mjs
+bots/            Optional Python AI (BOT_ENGINE=fai): worker, adapters, FAI project, rl-6-nimmt
+docs/            Launch guide
+scripts/         generate-art.mjs + art-prompts.json, smoke-test.mjs, og-fallback.svg
 ```
-
-`server/` (Python worker + adapters) and `2026-FAI-Final-Release-main/`, `vendor/` hold the optional Python FAI agents used when `BOT_ENGINE=fai`.
 
 ## Run locally
 
@@ -50,7 +49,7 @@ npm run art -- --only=character,logo
 npm run art                    # everything that's missing
 ```
 
-Images land in `apps/web/public/art/*.webp` and are registered in `apps/web/src/art/manifest.json`. Commit both. To change the look, edit the `style` and `prompt` fields in [`art/prompts.json`](art/prompts.json) and rerun with `--force`.
+Images land in `apps/web/public/art/*.webp` and are registered in `apps/web/src/art/manifest.json`. Commit both. To change the look, edit the `style` and `prompt` fields in [`scripts/art-prompts.json`](scripts/art-prompts.json) and rerun with `--force`.
 
 ## Deploy
 

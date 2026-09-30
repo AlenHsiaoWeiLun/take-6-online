@@ -24,7 +24,7 @@ import sharp from 'sharp';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.join(root, 'apps/web/public/art');
 const manifestPath = path.join(root, 'apps/web/src/art/manifest.json');
-const spec = JSON.parse(await readFile(path.join(root, 'art/prompts.json'), 'utf8'));
+const spec = JSON.parse(await readFile(path.join(root, 'scripts/art-prompts.json'), 'utf8'));
 
 try {
   process.loadEnvFile(path.join(root, '.env'));

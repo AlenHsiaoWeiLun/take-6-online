@@ -36,13 +36,13 @@ export interface FaiAgentConfig {
 
 export const getFaiAgentConfig = (): FaiAgentConfig => ({
   pythonBin: process.env.FAI_PYTHON_BIN || "python3",
-  agentRoot: path.resolve(process.cwd(), process.env.FAI_AGENT_ROOT || "../../2026-FAI-Final-Release-main"),
+  agentRoot: path.resolve(process.cwd(), process.env.FAI_AGENT_ROOT || "../../bots/fai"),
   moduleName: process.env.FAI_AGENT_MODULE || "src.players.TA.random_player",
   className: process.env.FAI_AGENT_CLASS || "RandomPlayer",
   argsJson: process.env.FAI_AGENT_ARGS || "{}",
   timeoutMs: Number(process.env.FAI_AGENT_TIMEOUT_MS || 3000),
-  // The Python worker lives in the repo-level server/ folder, next to the FAI agents.
-  workerPath: path.resolve(process.cwd(), process.env.FAI_WORKER_PATH || "../../server/fai_agent_worker.py")
+  // The Python worker lives in the repo-level bots/ folder, next to the FAI agents.
+  workerPath: path.resolve(process.cwd(), process.env.FAI_WORKER_PATH || "../../bots/fai_agent_worker.py")
 });
 
 export class FaiAgentClient {

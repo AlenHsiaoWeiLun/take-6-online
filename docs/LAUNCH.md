@@ -14,7 +14,7 @@ Throughout this guide, `play.example.com` is the website and `api.example.com` i
 
 1. `apps/web/src/brand.ts`: `name`, `short`, `plus`, `supportEmail`, `company`
 2. `apps/web/index.html`: `<title>` and meta tags
-3. `art/prompts.json`: any mention of the name, then `npm run art -- --force --only=logo-mark,og-cover`
+3. `scripts/art-prompts.json`: any mention of the name, then `npm run art -- --force --only=logo-mark,og-cover`
 
 "Inspired by the classic bullhead card game" is fine to say. Don't use their logo or card art.
 

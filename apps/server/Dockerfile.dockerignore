@@ -5,8 +5,6 @@
 .git
 .github
 .claude
-2026-FAI-Final-Release-main
-vendor
-art
+bots
 apps/web/public/art
 *.pt
