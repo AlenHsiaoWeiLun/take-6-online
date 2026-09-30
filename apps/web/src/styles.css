@@ -43,14 +43,22 @@
     color-scheme: dark;
     /* Card size scales with the viewport so six cards always fit across a row. */
     /* Board cards are sized from whichever runs out first: width (7 columns) or height (lane + 4 rows). */
-    --card-w: clamp(36px, min(calc((100vw - 90px) / 7.3), calc((100dvh - 370px) / 7.4)), 112px);
+    /* Phones: the hand is a 2×5 grid below, so the board is width-bound and uses the full width. */
+    --card-w: clamp(34px, min(calc((100vw - 48px) / 7.15), calc((100dvh - 430px) / 7.4)), 112px);
     --card-h: calc(var(--card-w) * 1.4);
     --hand-w: clamp(46px, min(calc((100vw - 32px) / 8.2), calc(100dvh / 12.5)), 80px);
   }
 
+  @media (min-width: 640px) {
+    :root { --card-w: clamp(36px, min(calc((100vw - 90px) / 7.3), calc((100dvh - 370px) / 7.4)), 112px); }
+  }
   /* Wide screens put the players in the top bar, so the board gets that height too. */
-  @media (min-width: 1024px) {
-    :root { --card-w: clamp(36px, min(calc((100vw - 90px) / 7.3), calc((100dvh - 312px) / 7.4)), 112px); }
+  @media (min-width: 1024px), (max-height: 600px) and (min-width: 640px) {
+    :root { --card-w: clamp(30px, min(calc((100vw - 90px) / 7.3), calc((100dvh - 290px) / 7.4)), 112px); }
+  }
+  /* Short screens: a single, smaller hand row so the four rows always fit above it. */
+  @media (max-height: 600px) and (min-width: 640px) {
+    :root { --hand-w: clamp(40px, calc(100dvh / 11), 56px); }
   }
 
   html, body, #root {
@@ -278,6 +286,12 @@
     gap: 3%;
     padding: 0 8%;
     color: white;
+  }
+  .card .pips { display: flex; align-items: center; justify-content: center; gap: 3%; width: 100%; }
+  .card .pipcount { display: none; align-items: center; gap: 4cqi; font-family: var(--font-display); font-size: 24cqi; line-height: 1; }
+  @container (max-width: 60px) {
+    .card .pips { display: none; }
+    .card .pipcount { display: flex; }
   }
   .card .num {
     position: absolute;

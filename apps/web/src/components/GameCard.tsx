@@ -28,9 +28,16 @@ export function GameCard({ card, theme = 'classic', width, className, style }: P
       aria-label={`${card.value}, ${card.bullheads} bullhead${card.bullheads > 1 ? 's' : ''}`}
     >
       <div className="band">
-        {Array.from({ length: Math.min(card.bullheads, 7) }).map((_, i) => (
-          <Bullhead key={i} style={{ width: pip, height: pip, flexShrink: 1, minWidth: 0 }} />
-        ))}
+        <span className="pips">
+          {Array.from({ length: Math.min(card.bullheads, 7) }).map((_, i) => (
+            <Bullhead key={i} style={{ width: pip, height: pip, flexShrink: 1, minWidth: 0 }} />
+          ))}
+        </span>
+        {/* Small cards: one head + the count, so the value never needs counting. */}
+        <span className="pipcount">
+          <Bullhead style={{ width: '22cqi', height: '22cqi' }} />
+          {card.bullheads > 1 && <b>{card.bullheads}</b>}
+        </span>
       </div>
       <div className="idx">{card.value}</div>
       <div className="num">{card.value}</div>

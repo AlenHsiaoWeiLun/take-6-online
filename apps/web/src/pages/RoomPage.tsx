@@ -34,15 +34,22 @@ export function RoomPage() {
     );
   }
 
+  const banner = !connected && <ReconnectBanner />;
   if (snapshot.room.phase === 'lobby') {
     return (
       <>
         <Header />
+        {banner}
         <Lobby snapshot={snapshot} clockOffset={clockOffset} />
       </>
     );
   }
-  return <Table snapshot={snapshot} emotes={emotes} clockOffset={clockOffset} ratings={ratings} />;
+  return (
+    <>
+      {banner}
+      <Table snapshot={snapshot} emotes={emotes} clockOffset={clockOffset} ratings={ratings} />
+    </>
+  );
 }
 
 function Notice({ title, body, spinner }: { title: string; body: string; spinner?: boolean }) {
@@ -65,6 +72,19 @@ function Notice({ title, body, spinner }: { title: string; body: string; spinner
           {t('Back to the lobby')}
         </Link>
       )}
+    </div>
+  );
+}
+
+/** Connection dropped: the seat is kept on the server and the room is re-joined automatically. */
+function ReconnectBanner() {
+  const t = useT();
+  return (
+    <div className="fixed inset-x-0 top-0 z-[70] flex justify-center p-2" role="status" aria-live="polite">
+      <div className="flex items-center gap-2 rounded-full border border-hay/40 bg-ink-900/95 px-4 py-2 text-sm font-semibold text-hay shadow-xl">
+        <span className="size-2 animate-pulse rounded-full bg-hay" />
+        {t('Connection lost — reconnecting. Your seat is kept.')}
+      </div>
     </div>
   );
 }

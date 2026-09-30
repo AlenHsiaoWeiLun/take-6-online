@@ -53,6 +53,9 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
   const secondsLeft = useCountdown(room.deadline, clockOffset);
   const theme = session.cardTheme;
   const wide = useIsWide();
+  // Landing hints: on by default in untimed practice tables, opt-in elsewhere (settings).
+  const [hintPref] = useHintPref();
+  const hints = hintPref ?? room.settings.turnSeconds === 0;
 
   const choosing = room.phase === 'choosingRow' ? byId.get(room.choosingPlayerId ?? '') : undefined;
   const iMustChoose = !!choosing && choosing.id === self.playerId;
@@ -173,6 +176,8 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
                 canPlay={canPlay}
                 theme={theme}
                 dealing={dealing}
+                rows={room.rows.map((r) => r.cards)}
+                hints={hints}
                 onPlay={(v) => {
                   sound.play('play');
                   haptic(30);
@@ -194,9 +199,36 @@ export function Table({ snapshot, emotes, clockOffset, ratings }: Props) {
   );
 }
 
+export function useHintPref() {
+  const read = () => {
+    try {
+      const v = localStorage.getItem('take6.hints');
+      return v === null ? null : v === 'true';
+    } catch {
+      return null;
+    }
+  };
+  const [pref, setPref] = useState<boolean | null>(read);
+  useEffect(() => {
+    const on = () => setPref(read());
+    window.addEventListener('take6:hints', on);
+    return () => window.removeEventListener('take6:hints', on);
+  }, []);
+  const set = (v: boolean) => {
+    try {
+      localStorage.setItem('take6.hints', String(v));
+    } catch {
+      /* ignore */
+    }
+    window.dispatchEvent(new Event('take6:hints'));
+  };
+  return [pref, set] as const;
+}
+
 /** Only one PlayersBar may exist at a time: its chips are the anchors effects fly to. */
 function useIsWide() {
-  const query = '(min-width: 1024px)';
+  // Desktop, or short landscape screens (phones sideways, small laptops): players go in the top bar.
+  const query = '(min-width: 1024px), (max-height: 600px) and (min-width: 640px)';
   const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
   useEffect(() => {
     const mq = window.matchMedia(query);
@@ -289,7 +321,7 @@ function PlayersBar({ snapshot, emotes, colorOf }: { snapshot: RoomSnapshot; emo
   const takerId = room.lastEvent?.type === 'take' ? room.lastEvent.playerId : null;
 
   return (
-    <div className="no-scrollbar relative flex shrink-0 gap-2 overflow-x-auto px-3 py-2 sm:justify-center sm:px-4">
+    <div className="no-scrollbar relative flex shrink-0 gap-1.5 overflow-x-auto px-2.5 py-1.5 sm:justify-center sm:gap-2 sm:px-4">
       {room.players.map((p) => {
         const color = colorOf.get(p.id)!;
         const thinking = room.phase === 'selecting' && !p.hasPlayed;
@@ -750,12 +782,34 @@ function StatusLine({
 
 // ------------------------------------------------------------------ hand
 
+function useMedia(query: string) {
+  const [match, setMatch] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [query]);
+  return match;
+}
+
+/** Where a card would go on the current table (other players' cards can still change it). */
+function landingHint(card: Card, rows: Card[][], t: ReturnType<typeof useT>) {
+  const target = findTargetRow(card, rows.map((cards) => ({ cards })));
+  if (target === -1) return { text: t('Lower than every row — you’ll pick a row to take'), danger: true };
+  const row = rows[target];
+  if (row.length >= MAX_ROW_LENGTH) return { text: t('Sixth card on row {r} — takes {p} bullheads', { r: target + 1, p: rowPenalty(row) }), danger: true };
+  return { text: t('Goes to row {r} (slot {s})', { r: target + 1, s: row.length + 1 }), danger: row.length === MAX_ROW_LENGTH - 1 };
+}
+
 function Hand({
   hand,
   selected,
   canPlay,
   theme,
   dealing,
+  rows,
+  hints,
   onPlay,
 }: {
   hand: Card[];
@@ -763,6 +817,9 @@ function Hand({
   canPlay: boolean;
   theme: string;
   dealing: boolean;
+  rows: Card[][];
+  /** Show where the picked card would land (practice / opt-in). */
+  hints: boolean;
   onPlay: (v: number) => void;
 }) {
   const t = useT();
@@ -771,6 +828,8 @@ function Hand({
   const inHand = hand.filter((c) => c.value !== selected);
   const dragged = useRef(false);
   const [overlap, setOverlap] = useState(0);
+  // Phones: two rows of five, flat, nothing overlapping — every number stays readable.
+  const grid = useMedia('(max-width: 639px)');
 
   useEffect(() => {
     if (!canPlay) setPick(null);
@@ -778,7 +837,7 @@ function Hand({
 
   useLayoutEffect(() => {
     const el = box.current;
-    if (!el) return;
+    if (!el || grid) return setOverlap(0);
     const measure = () => {
       const first = el.querySelector<HTMLElement>('[data-hand-card]');
       if (!first) return;
@@ -792,15 +851,15 @@ function Hand({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [inHand.length]);
+  }, [inHand.length, grid]);
 
   useEffect(() => {
     if (!canPlay) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && pick !== null) onPlay(pick);
       if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-        const i = pick === null ? -1 : hand.findIndex((c) => c.value === pick);
-        const next = hand[Math.max(0, Math.min(hand.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)))];
+        const i = pick === null ? -1 : inHand.findIndex((c) => c.value === pick);
+        const next = inHand[Math.max(0, Math.min(inHand.length - 1, i + (e.key === 'ArrowRight' ? 1 : -1)))];
         if (next) {
           setPick(next.value);
           sound.play('select', next.value / 10);
@@ -809,57 +868,73 @@ function Hand({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [canPlay, pick, onPlay, hand]);
+  }, [canPlay, pick, onPlay, inHand]);
 
+  const picked = inHand.find((c) => c.value === pick) ?? null;
+  const played = hand.find((c) => c.value === selected) ?? null;
+  const hint = hints && picked ? landingHint(picked, rows, t) : null;
   const mid = (inHand.length - 1) / 2;
-  const spread = Math.min(3.2, 26 / Math.max(1, inHand.length));
+  const spread = Math.min(2, 16 / Math.max(1, inHand.length));
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="flex h-7 items-center justify-center">
-        <AnimatePresence mode="wait">
-          {canPlay && pick !== null ? (
+      {/* Fixed action bar: always the same place, always says what happens next. */}
+      <div className="flex min-h-11 items-center justify-center gap-3 px-1">
+        {canPlay && picked ? (
+          <>
+            {hint && (
+              <span className={clsx('hidden max-w-[18rem] text-right text-xs font-semibold sm:block', hint.danger ? 'text-[#ff9ea1]' : 'text-mist')}>{hint.text}</span>
+            )}
             <motion.button
               key="play"
-              initial={{ opacity: 0, y: 8, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ type: 'spring', stiffness: 600, damping: 22 }}
-              className="btn btn-primary btn-sm !px-5"
-              onClick={() => onPlay(pick)}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 600, damping: 24 }}
+              className="btn btn-primary !py-1.5 !pl-1.5 !pr-4"
+              onClick={() => onPlay(picked.value)}
             >
-              {t('Play {v}', { v: pick })}
+              <GameCard card={picked} theme={theme} width={30} />
+              <span className="text-left leading-tight">
+                <span className="block text-[15px] font-extrabold">{t('Play {v}', { v: picked.value })}</span>
+                <span className="flex items-center gap-1 text-[11px] font-semibold text-white/85">
+                  {picked.bullheads} <Bullhead size={10} />
+                </span>
+              </span>
             </motion.button>
-          ) : selected !== null ? (
-            <motion.span key="done" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="chip !text-mint">
-              <IconCheck size={12} /> {t('You played {v}', { v: selected })}
-            </motion.span>
-          ) : canPlay ? (
-            <motion.span key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-xs text-fog">
-              {t('Tap a card, then tap again — or flick it up')}
-            </motion.span>
-          ) : null}
-        </AnimatePresence>
+          </>
+        ) : played ? (
+          <span className="chip !py-1 !pl-1 !pr-3 !text-mint">
+            <GameCard card={played} theme={theme} width={22} /> <IconCheck size={12} /> {t('You played {v} — waiting for the others', { v: played.value })}
+          </span>
+        ) : canPlay ? (
+          <span className="text-sm font-semibold text-hay">{t('Pick a card — tap it, then tap Play')}</span>
+        ) : null}
       </div>
-      <div ref={box} className="flex justify-center pb-5 pt-2" style={{ '--overlap': `${overlap}px` } as CSSProperties}>
+      {hint && (
+        <p className={clsx('-mt-1 mb-1 text-center text-xs font-semibold sm:hidden', hint.danger ? 'text-[#ff9ea1]' : 'text-mist')}>{hint.text}</p>
+      )}
+
+      <div
+        ref={box}
+        className={clsx(grid ? 'grid grid-cols-5 justify-items-center gap-x-1.5 gap-y-2 px-1 pb-3 pt-1' : 'flex justify-center pb-4 pt-2')}
+        style={{ '--overlap': `${overlap}px` } as CSSProperties}
+      >
         <AnimatePresence initial={false}>
           {inHand.map((card, i) => {
             const isPick = pick === card.value;
-            const isPlayed = selected === card.value;
-            const lift = isPick || isPlayed ? -22 : 0;
-            const arc = Math.min(18, (i - mid) ** 2 * 0.8);
+            const arc = grid ? 0 : Math.min(12, (i - mid) ** 2 * 0.5);
             return (
               <motion.button
                 key={card.value}
                 data-hand-card
                 layoutId={`card-${card.value}`}
-                initial={dealing ? { y: -320, x: (mid - i) * 30, rotate: (mid - i) * 12, opacity: 0, scale: 0.5 } : { y: 40, opacity: 0 }}
-                animate={{ y: arc + lift, x: 0, rotate: isPick || isPlayed ? 0 : (i - mid) * spread, opacity: 1, scale: isPick ? 1.06 : 1 }}
                 layout
+                initial={dealing ? { y: -320, x: (mid - i) * 30, rotate: (mid - i) * 12, opacity: 0, scale: 0.5 } : { y: 30, opacity: 0 }}
+                animate={{ y: arc + (isPick ? (grid ? -6 : -18) : 0), x: 0, rotate: grid || isPick ? 0 : (i - mid) * spread, opacity: 1, scale: isPick ? 1.08 : 1 }}
                 exit={{ opacity: 0, transition: { duration: 0 } }}
-                transition={{ type: 'spring', stiffness: 380, damping: 26, delay: dealing ? i * 0.045 : 0 }}
-                whileHover={canPlay && !isPick ? { y: arc - 10, rotate: 0 } : undefined}
-                drag={canPlay ? 'y' : false}
+                transition={{ type: 'spring', stiffness: 420, damping: 28, delay: dealing ? i * 0.045 : 0 }}
+                whileHover={canPlay && !isPick && !grid ? { y: arc - 8, rotate: 0 } : undefined}
+                drag={canPlay && !grid ? 'y' : false}
                 dragConstraints={{ top: 0, bottom: 0 }}
                 dragElastic={{ top: 0.7, bottom: 0.1 }}
                 dragSnapToOrigin
@@ -880,21 +955,23 @@ function Hand({
                     setPick(card.value);
                   }
                 }}
-                className={clsx('relative shrink-0 touch-none rounded-[10px] focus-visible:outline-offset-4', i > 0 && 'ml-[calc(6px-var(--overlap))]')}
+                className={clsx('relative shrink-0 touch-manipulation rounded-[10px] focus-visible:outline-offset-4', !grid && i > 0 && 'ml-[calc(6px-var(--overlap))]')}
                 style={{ zIndex: isPick ? 20 : i, transformOrigin: '50% 120%' }}
                 aria-label={t('Card {v}', { v: card.value })}
+                aria-pressed={isPick}
               >
                 <GameCard
                   card={card}
                   theme={theme}
-                  width="var(--hand-w)"
-                  className={clsx(
-                    isPick && 'ring-[3px] ring-hay',
-                    isPlayed && 'ring-[3px] ring-mint',
-                    !canPlay && !isPlayed && 'brightness-[.72] saturate-[.8]',
-                  )}
-                  style={isPick ? { boxShadow: '0 0 0 3px #f5b942, 0 14px 30px -6px rgb(245 185 66 / .7)' } : undefined}
+                  width={grid ? 'calc((100vw - 40px) / 5.4)' : 'var(--hand-w)'}
+                  className={clsx(!canPlay && 'brightness-[.75] saturate-[.8]')}
+                  style={isPick ? { boxShadow: '0 0 0 3px #f5b942, 0 14px 26px -8px rgb(0 0 0 / .7)' } : undefined}
                 />
+                {isPick && (
+                  <span className="absolute -top-2.5 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-full bg-hay px-1.5 text-[10px] font-extrabold text-ink-950">
+                    {t('Picked')}
+                  </span>
+                )}
               </motion.button>
             );
           })}

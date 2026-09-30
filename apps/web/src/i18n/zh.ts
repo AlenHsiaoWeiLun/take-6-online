@@ -303,6 +303,20 @@ export const zh: Record<string, string> = {
   'We sent a 6-digit code to {email}.': '已寄 6 位數驗證碼到 {email}。',
   'Use a different email': '改用其他 email',
 
+  // stability
+  'Something broke': '出了點問題',
+  'Your game is safe on the server. Reload to jump back in — if you were in a room, you’ll return to your seat.': '牌局還在伺服器上，重新整理就能回來；原本在房間裡的話會回到原座位。',
+  Reload: '重新整理',
+  'Connection lost — reconnecting. Your seat is kept.': '連線中斷，正在重新連線，座位會幫你保留。',
+  // hand
+  'Lower than every row — you’ll pick a row to take': '比每一列都小，出了要選一列收走',
+  'Sixth card on row {r} — takes {p} bullheads': '會是第 {r} 列的第六張，要吃 {p} 個牛頭',
+  'Goes to row {r} (slot {s})': '會放到第 {r} 列（第 {s} 格）',
+  'You played {v} — waiting for the others': '你出了 {v}，等其他人',
+  'Pick a card — tap it, then tap Play': '選一張牌：點一下，再按出牌',
+  Picked: '已選',
+  'Cards land here': '出的牌會先放這裡',
+
   // server messages
   'That room doesn’t exist or has closed.': '這個房間不存在或已關閉。',
   'This room has closed.': '這個房間已關閉。',
