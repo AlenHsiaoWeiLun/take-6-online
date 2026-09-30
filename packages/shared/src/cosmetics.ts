@@ -37,13 +37,20 @@ export const CARD_THEMES: CardTheme[] = [
   { id: 'meadow', name: 'Meadow', description: 'Soft greens, hand-drawn pasture pattern.', plus: true },
 ];
 
+/** Emoji reactions float up from the player; phrases pop as speech bubbles. */
 export const EMOTES = [
-  { id: 'gg', label: 'GG' },
-  { id: 'nice', label: 'Nice one' },
-  { id: 'oops', label: 'Oops' },
-  { id: 'wow', label: 'Wow' },
-  { id: 'hurry', label: 'Hurry up!' },
-  { id: 'moo', label: 'Moo!' },
+  { id: 'lol', emoji: '😂', label: 'LOL' },
+  { id: 'wow', emoji: '😱', label: 'Wow' },
+  { id: 'angry', emoji: '😤', label: 'Grr' },
+  { id: 'clap', emoji: '👏', label: 'Clap' },
+  { id: 'fire', emoji: '🔥', label: 'Fire' },
+  { id: 'moo', emoji: '🐮', label: 'Moo!' },
+  { id: 'skull', emoji: '💀', label: 'RIP' },
+  { id: 'pray', emoji: '🙏', label: 'Please' },
+  { id: 'gg', emoji: null, label: 'GG' },
+  { id: 'nice', emoji: null, label: 'Nice one' },
+  { id: 'oops', emoji: null, label: 'Oops' },
+  { id: 'hurry', emoji: null, label: 'Hurry up!' },
 ] as const;
 
 export const BOT_NAMES = [

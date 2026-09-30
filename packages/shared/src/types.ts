@@ -54,6 +54,8 @@ export type TableEvent =
   | { id: number; type: 'deal' }
   | { id: number; type: 'reveal' }
   | { id: number; type: 'place'; playerId: string; card: Card; row: number }
+  /** A sixth card is about to land: brief suspense before the take. */
+  | { id: number; type: 'danger'; playerId: string; card: Card; row: number }
   | { id: number; type: 'take'; playerId: string; card: Card; row: number; penalty: number; forced: boolean };
 
 export interface Standing {
@@ -63,6 +65,8 @@ export interface Standing {
   isBot: boolean;
   score: number;
   rank: number;
+  rowsTaken: number;
+  biggestTake: number;
 }
 
 export interface GameResult {
@@ -130,7 +134,7 @@ export interface ClientToServerEvents {
   'game:play': (value: number) => void;
   'game:chooseRow': (row: number) => void;
   'game:emote': (emote: string) => void;
-  'game:rematch': () => void;
+  'game:rematch': (options?: { instant?: boolean }) => void;
   'profile:update': (profile: { name?: string; avatar?: string; cardTheme?: string }) => void;
 }
 

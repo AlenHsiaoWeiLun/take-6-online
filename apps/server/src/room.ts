@@ -32,18 +32,20 @@ import { createBotBrain, type BotBrain, type FaiHistory } from './bots';
 export type IO = Server<ClientToServerEvents, ServerToClientEvents>;
 
 const TIMING = {
-  revealBase: 1300,
-  revealPerCard: 140,
-  place: 850,
-  take: 1600,
-  handEnd: 7000,
-  botMin: 700,
-  botMax: 2100,
+  // Tuned for pace: long enough to follow every card, short enough to feel snappy.
+  revealBase: 900,
+  revealPerCard: 90,
+  place: 560,
+  take: 1250,
+  danger: 650,
+  handEnd: 5000,
+  botMin: 350,
+  botMax: 1300,
   absentAutoPlay: 4000,
   rowChoiceMax: 20_000,
   lobbyGrace: 30_000,
   emptyRoomClose: 90_000,
-  publicAutoStart: 30_000,
+  publicAutoStart: 20_000,
 };
 
 export const TURN_SECONDS = [15, 30, 45, 60];
@@ -69,6 +71,8 @@ interface Seat {
   selected: Card | null;
   score: number;
   handScore: number;
+  rowsTaken: number;
+  biggestTake: number;
   /** Left mid-game; their turns are auto-played until they rejoin. */
   left: boolean;
 }
@@ -264,6 +268,8 @@ export class Room {
       selected: null,
       score: 0,
       handScore: 0,
+      rowsTaken: 0,
+      biggestTake: 0,
       left: false,
     };
   }
@@ -335,7 +341,8 @@ export class Room {
     return null;
   }
 
-  rematch(socketId: string) {
+  /** Back to the lobby, or with `instant` straight into a fresh deal with the same table. */
+  rematch(socketId: string, instant = false) {
     if (!this.isHost(socketId) || this.phase !== 'gameEnd') return;
     this.advance();
     this.seats = this.seats.filter((s) => s.isBot || (s.sockets.size > 0 && !s.left));
@@ -354,6 +361,7 @@ export class Room {
     this.handNumber = 0;
     this.turn = 0;
     this.reassignHostIfNeeded();
+    if (instant && this.seats.length >= MIN_PLAYERS) return this.start();
     this.maybeScheduleAutoStart();
     this.broadcast();
   }
@@ -378,6 +386,8 @@ export class Room {
     for (const s of this.seats) {
       s.score = 0;
       s.handScore = 0;
+      s.rowsTaken = 0;
+      s.biggestTake = 0;
     }
     this.handNumber = 0;
     this.result = null;
@@ -515,7 +525,7 @@ export class Room {
       const window = Math.min(this.settings.turnSeconds * 1000, TIMING.rowChoiceMax);
       this.deadline = Date.now() + window;
       this.broadcast();
-      if (seat.isBot) this.later(1100, () => this.chooseRowFor(seat, this.brain.chooseRow(this.rows)));
+      if (seat.isBot) this.later(700, () => this.chooseRowFor(seat, this.brain.chooseRow(this.rows)));
       else if (!isConnected(seat) || seat.left) this.scheduleAbsentAction(seat);
       this.later(window, () => this.autoPlay(seat));
       return;
@@ -525,7 +535,9 @@ export class Room {
     this.choosingPlayerId = null;
     this.deadline = null;
     if (this.rows[target].cards.length >= MAX_ROW_LENGTH) {
-      this.takeRow(seat, target, card, false);
+      this.lastEvent = { id: ++this.eventId, type: 'danger', playerId: seat.id, card, row: target };
+      this.broadcast();
+      this.later(TIMING.danger, () => this.takeRow(seat, target, card, false));
     } else {
       this.rows[target] = { cards: [...this.rows[target].cards, card] };
       this.lastEvent = { id: ++this.eventId, type: 'place', playerId: seat.id, card, row: target };
@@ -554,6 +566,8 @@ export class Room {
     const penalty = rowPenalty(this.rows[row].cards);
     seat.score += penalty;
     seat.handScore += penalty;
+    seat.rowsTaken += 1;
+    seat.biggestTake = Math.max(seat.biggestTake, penalty);
     this.rows[row] = { cards: [card] };
     this.lastEvent = { id: ++this.eventId, type: 'take', playerId: seat.id, card, row, penalty, forced };
     this.broadcast();
@@ -590,7 +604,16 @@ export class Room {
     this.deadline = null;
     const ranks = rankScores(this.seats.map((s) => s.score));
     const standings = this.seats
-      .map((s, i) => ({ playerId: s.id, name: s.name, avatar: s.avatar, isBot: s.isBot, score: s.score, rank: ranks[i] }))
+      .map((s, i) => ({
+        playerId: s.id,
+        name: s.name,
+        avatar: s.avatar,
+        isBot: s.isBot,
+        score: s.score,
+        rank: ranks[i],
+        rowsTaken: s.rowsTaken,
+        biggestTake: s.biggestTake,
+      }))
       .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
     this.result = { standings, winnerIds: standings.filter((s) => s.rank === 1).map((s) => s.playerId) };
     this.broadcast();

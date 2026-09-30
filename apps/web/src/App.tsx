@@ -11,6 +11,7 @@ import { Privacy, Terms } from './pages/Legal';
 import { artUrl } from './art/Art';
 import { useT } from './i18n';
 import { LANDINGS, Landing } from './pages/Landing';
+import { FxLayer } from './fx/fx';
 
 function SiteLayout() {
   const { pathname } = useLocation();
@@ -63,6 +64,7 @@ export default function App() {
           />
         </Route>
       </Routes>
+      <FxLayer />
     </>
   );
 }

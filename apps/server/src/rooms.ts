@@ -107,11 +107,11 @@ export class RoomManager {
     });
     socket.on('game:play', (value) => room()?.play(socket.id, Number(value)));
     socket.on('game:chooseRow', (row) => room()?.chooseRow(socket.id, Number(row)));
-    socket.on('game:rematch', () => room()?.rematch(socket.id));
+    socket.on('game:rematch', (options) => room()?.rematch(socket.id, !!options?.instant));
 
     let lastEmote = 0;
     socket.on('game:emote', (emote) => {
-      if (!EMOTE_IDS.has(emote) || Date.now() - lastEmote < 1500) return;
+      if (!EMOTE_IDS.has(emote) || Date.now() - lastEmote < 700) return;
       lastEmote = Date.now();
       room()?.emote(socket.id, emote);
     });

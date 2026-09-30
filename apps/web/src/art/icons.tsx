@@ -180,3 +180,23 @@ export const IconGoogle = ({ size = 18 }: { size?: number }) => (
     <path fill="currentColor" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.8-5.5 3.8-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.2 14.6 2.2 12 2.2 6.6 2.2 2.3 6.6 2.3 12S6.6 21.8 12 21.8c5.8 0 9.6-4 9.6-9.8 0-.7-.1-1.2-.2-1.7H12Z" />
   </svg>
 );
+export const IconMusic = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M9 18V5.5l10-2v12.5" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="16.5" cy="16" r="2.5" />
+  </Base>
+);
+export const IconMusicOff = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M9 18V9M9 5.5l10-2v9" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <path d="M3.5 3.5l17 17" />
+  </Base>
+);
+export const IconSmile = (p: IconProps) => (
+  <Base {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M8.5 14.5c.9 1.2 2.1 1.8 3.5 1.8s2.6-.6 3.5-1.8M9 9.5h.01M15 9.5h.01" />
+  </Base>
+);

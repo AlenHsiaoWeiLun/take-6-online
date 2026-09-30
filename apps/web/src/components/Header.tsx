@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import clsx from 'clsx';
 import { Logo } from '../art/Logo';
-import { IconMute, IconSparkle, IconVolume } from '../art/icons';
+import { IconMusic, IconMusicOff, IconMute, IconSparkle, IconVolume } from '../art/icons';
 import { Avatar } from './Avatar';
 import { ProfileDialog } from './ProfileDialog';
 import { useSession } from '../state/session';
@@ -11,17 +11,21 @@ import { useLang } from '../i18n';
 
 export function useMuted() {
   const [muted, setMuted] = useState(sound.muted);
-  useEffect(() => {
-    const off = sound.subscribe(setMuted);
-    return () => void off();
-  }, []);
+  useEffect(() => sound.subscribe(() => setMuted(sound.muted)), []);
   return [muted, (v: boolean) => sound.setMuted(v)] as const;
+}
+
+export function useMusic() {
+  const [on, setOn] = useState(sound.music);
+  useEffect(() => sound.subscribe(() => setOn(sound.music)), []);
+  return [on, (v: boolean) => sound.setMusic(v)] as const;
 }
 
 export function Header({ minimal = false }: { minimal?: boolean }) {
   const { session, connected } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
   const [muted, setMuted] = useMuted();
+  const [music, setMusic] = useMusic();
   const { t, lang, setLang } = useLang();
 
   const nav = [
@@ -60,6 +64,9 @@ export function Header({ minimal = false }: { minimal?: boolean }) {
             aria-label={lang === 'zh' ? 'Switch to English' : '切換為中文'}
           >
             {lang === 'zh' ? 'EN' : '中'}
+          </button>
+          <button className="btn btn-ghost btn-sm hidden !px-2.5 sm:inline-flex" onClick={() => setMusic(!music)} aria-label={music ? t('Music off') : t('Music on')}>
+            {music ? <IconMusic size={17} /> : <IconMusicOff size={17} />}
           </button>
           <button className="btn btn-ghost btn-sm !px-2.5" onClick={() => setMuted(!muted)} aria-label={muted ? t('Unmute') : t('Mute')}>
             {muted ? <IconMute size={17} /> : <IconVolume size={17} />}

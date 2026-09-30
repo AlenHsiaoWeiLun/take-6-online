@@ -226,6 +226,27 @@ export const zh: Record<string, string> = {
   'Loading…': '載入中…',
   'No ranked players yet. Be the first!': '還沒有人上榜，搶當第一名！',
 
+  // polish pass
+  Leader: '領先',
+  '6th card!': '第六張！',
+  'Uh-oh… your {v} is the sixth card!': '糟了…你的 {v} 是第六張！',
+  'Uh-oh… {name}’s {v} is the sixth card!': '糟了…{name} 的 {v} 是第六張！',
+  'Tap a card, then tap again — or flick it up': '點一下選牌、再點一次出牌，或把牌往上滑',
+  'Music on': '開啟音樂',
+  'Music off': '關閉音樂',
+  LOL: '笑死',
+  Grr: '氣氣',
+  Clap: '拍手',
+  Fire: '太神啦',
+  RIP: '安息',
+  Please: '拜託',
+  'Change settings': '修改設定',
+  'Biggest gulp': '一口吞最多',
+  '{name} · {n} in one row': '{name} · 一列 {n} 個',
+  'Row collector': '收列王',
+  '{name} · {n} rows': '{name} · {n} 列',
+  Spotless: '零失誤',
+
   // server messages
   'That room doesn’t exist or has closed.': '這個房間不存在或已關閉。',
   'This room has closed.': '這個房間已關閉。',
