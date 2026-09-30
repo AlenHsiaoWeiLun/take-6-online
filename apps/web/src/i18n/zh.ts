@@ -299,6 +299,10 @@ export const zh: Record<string, string> = {
   On: '開',
   Off: '關',
 
+  'Email me a code': '寄驗證碼給我',
+  'We sent a 6-digit code to {email}.': '已寄 6 位數驗證碼到 {email}。',
+  'Use a different email': '改用其他 email',
+
   // server messages
   'That room doesn’t exist or has closed.': '這個房間不存在或已關閉。',
   'This room has closed.': '這個房間已關閉。',

@@ -1,8 +1,8 @@
 import { config } from './config';
-import { supabase } from './supabase';
+import { accessToken } from './auth';
 
 async function authHeader(): Promise<Record<string, string>> {
-  const token = (await supabase?.auth.getSession())?.data.session?.access_token;
+  const token = await accessToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 

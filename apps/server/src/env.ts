@@ -7,6 +7,8 @@ export const env = {
   webOrigins: list(process.env.WEB_ORIGINS, ['http://localhost:5173']),
   webUrl: process.env.WEB_URL || 'http://localhost:5173',
   databaseUrl: process.env.DATABASE_URL || '',
+  /** InsForge project base URL, e.g. https://xxxx.ap-southeast.insforge.app (auth tokens are verified against its JWKS). */
+  insforgeUrl: (process.env.INSFORGE_URL || '').replace(/\/$/, ''),
   supabaseUrl: (process.env.SUPABASE_URL || '').replace(/\/$/, ''),
   supabaseJwtSecret: process.env.SUPABASE_JWT_SECRET || '',
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
@@ -20,6 +22,6 @@ export const env = {
 
 export const features = {
   db: !!env.databaseUrl,
-  auth: !!(env.supabaseUrl || env.supabaseJwtSecret),
+  auth: !!(env.insforgeUrl || env.supabaseUrl || env.supabaseJwtSecret),
   payments: !!(env.stripeSecretKey && env.stripePricePlus && env.databaseUrl),
 };

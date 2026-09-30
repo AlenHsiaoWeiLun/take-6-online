@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.58.0",
+    "@insforge/sdk": "^1.5.2",
     "@take6/shared": "*",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",

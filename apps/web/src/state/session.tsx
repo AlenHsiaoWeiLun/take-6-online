@@ -1,9 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import type { User } from '@supabase/supabase-js';
 import type { ClientToServerEvents, ServerToClientEvents, SessionInfo } from '@take6/shared';
 import { config } from '../lib/config';
-import { supabase } from '../lib/supabase';
+import { accessToken, currentUser, insforge, type AuthUser } from '../lib/auth';
 import { guestId, storage } from '../lib/storage';
 import { api, type ServerConfig } from '../lib/api';
 
@@ -19,12 +18,13 @@ interface SessionContextValue {
   socket: GameSocket | null;
   connected: boolean;
   session: SessionInfo;
-  user: User | null;
+  user: AuthUser | null;
   authReady: boolean;
   authEnabled: boolean;
   serverConfig: ServerConfig | null;
   signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string) => Promise<void>;
+  sendEmailCode: (email: string) => Promise<void>;
+  verifyEmailCode: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (patch: Partial<LocalProfile>) => void;
 }
@@ -34,8 +34,8 @@ const SessionContext = createContext<SessionContextValue | null>(null);
 const PROFILE_KEY = 'take6.profile';
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(!supabase);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(!insforge);
   const [socket, setSocket] = useState<GameSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [serverConfig, setServerConfig] = useState<ServerConfig | null>(null);
@@ -49,13 +49,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
-      setAuthReady(true);
+    if (!insforge) return;
+    // Also completes an OAuth redirect (?insforge_code=…) and restores the session from the refresh cookie.
+    currentUser()
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setAuthReady(true));
+    return insforge.auth.onAuthStateChange((event) => {
+      if (event === 'signedOut') setUser(null);
+      else if (event === 'signedIn') void currentUser().then(setUser);
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, s) => setUser(s?.user ?? null));
-    return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -69,7 +72,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       transports: ['websocket', 'polling'],
       // Evaluated on every (re)connect, so refreshed access tokens are picked up automatically.
       auth: async (cb) => {
-        const token = (await supabase?.auth.getSession())?.data.session?.access_token ?? null;
+        const token = await accessToken();
         cb({ token, guestId: guestId(), ...local.current });
       },
     });
@@ -107,19 +110,26 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       session,
       user,
       authReady,
-      authEnabled: !!supabase,
+      authEnabled: !!insforge,
       serverConfig,
       updateProfile,
       signInWithGoogle: async () => {
-        await supabase?.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } });
+        await insforge?.auth.signInWithOAuth('google', { redirectTo: window.location.href, additionalParams: { prompt: 'select_account' } });
       },
-      signInWithEmail: async (email: string) => {
-        if (!supabase) return;
-        const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
-        if (error) throw error;
+      sendEmailCode: async (email: string) => {
+        if (!insforge) return;
+        const { error } = await insforge.auth.signInWithOtp({ email });
+        if (error) throw new Error(error.message);
+      },
+      verifyEmailCode: async (email: string, code: string) => {
+        if (!insforge) return;
+        const { error } = await insforge.auth.verifyOtp({ email, otp: code.trim(), name: local.current.name || undefined });
+        if (error) throw new Error(error.message);
+        setUser(await currentUser());
       },
       signOut: async () => {
-        await supabase?.auth.signOut();
+        await insforge?.auth.signOut();
+        setUser(null);
       },
     }),
     [socket, connected, session, user, authReady, serverConfig, updateProfile],

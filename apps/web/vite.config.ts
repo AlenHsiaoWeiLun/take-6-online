@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             react: ['react', 'react-dom', 'react-router-dom'],
             motion: ['framer-motion'],
-            supabase: ['@supabase/supabase-js'],
+            auth: ['@insforge/sdk'],
             realtime: ['socket.io-client'],
           },
         },

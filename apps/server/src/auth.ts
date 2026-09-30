@@ -15,6 +15,8 @@ export interface Identity {
   cardTheme: string;
 }
 
+// InsForge signs user access tokens with RS256 and publishes the key at /.well-known/jwks.json.
+const insforgeJwks = env.insforgeUrl ? createRemoteJWKSet(new URL(`${env.insforgeUrl}/.well-known/jwks.json`)) : null;
 const jwks = env.supabaseUrl
   ? createRemoteJWKSet(new URL(`${env.supabaseUrl}/auth/v1/.well-known/jwks.json`))
   : null;
@@ -22,6 +24,7 @@ const hsSecret = env.supabaseJwtSecret ? new TextEncoder().encode(env.supabaseJw
 
 interface SupabaseClaims extends JWTPayload {
   email?: string;
+  role?: string;
   user_metadata?: { full_name?: string; name?: string; user_name?: string };
 }
 
@@ -29,6 +32,14 @@ export async function verifyAccessToken(token: string | undefined | null): Promi
   if (!token) return null;
   try {
     const { alg } = decodeProtectedHeader(token);
+    if (insforgeJwks) {
+      if (alg !== 'RS256') return null;
+      const { payload } = await jwtVerify(token, insforgeJwks, { algorithms: ['RS256'] });
+      const claims = payload as SupabaseClaims;
+      // Only real signed-in users: anon keys have no subject, admin/API tokens carry other roles.
+      if (!claims.sub || (claims.role ?? 'authenticated') !== 'authenticated') return null;
+      return claims;
+    }
     if (alg === 'HS256') {
       if (!hsSecret) return null;
       return (await jwtVerify(token, hsSecret, { audience: 'authenticated' })).payload as SupabaseClaims;
