@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit -p . && vite build && node scripts/prerender.mjs",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "deploy:cf": "npx --yes wrangler@4 deploy"
   },
   "dependencies": {
     "@insforge/sdk": "^1.5.2",

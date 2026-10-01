@@ -14,7 +14,7 @@ The live stack is **Vercel** (website) + **InsForge** (Postgres, sign-in, game s
 
 | Piece | Where |
 |---|---|
-| Website | `https://bullheads.alenhsiao.com` (InsForge deployment in project `bullheads-online`, DNS CNAME in the alenhsiao.com Cloudflare account); `bullheads.vercel.app` and `bullheads-online.vercel.app` 308-redirect here |
+| Website | `https://bullheads.alenhsiao.com`: Cloudflare Worker `bullheads-web` (static assets + SPA fallback, `apps/web/wrangler.jsonc`; build with the prod `VITE_*` env, then `npm run deploy:cf -w @take6/web`). `bullheads.vercel.app` / `bullheads-online.vercel.app` 308-redirect here via `vercel.json` |
 | Game server | InsForge Compute service `bullheads-server` — deploy with `scripts/deploy-server-insforge.sh` |
 | Database | InsForge project `bullheads-online` (`npx @insforge/cli db connection-string`) |
 | Sign-in | InsForge auth: Google + 6-digit email code. The server verifies tokens via `INSFORGE_URL/.well-known/jwks.json` |

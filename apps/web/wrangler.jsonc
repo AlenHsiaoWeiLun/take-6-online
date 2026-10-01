@@ -1,0 +1,13 @@
+{
+  // Bullheads web: static build + a tiny SPA fallback worker. Deploy: npm run deploy:cf -w @take6/web
+  "name": "bullheads-web",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "drop-trailing-slash",
+    "not_found_handling": "none"
+  },
+  "routes": [{ "pattern": "bullheads.alenhsiao.com", "custom_domain": true }]
+}
