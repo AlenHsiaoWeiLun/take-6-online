@@ -13,7 +13,18 @@
           "value": "bullheads-online.vercel.app"
         }
       ],
-      "destination": "https://bullheads.vercel.app/:path*",
+      "destination": "https://bullheads.alenhsiao.com/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "bullheads.vercel.app"
+        }
+      ],
+      "destination": "https://bullheads.alenhsiao.com/:path*",
       "permanent": true
     }
   ],
