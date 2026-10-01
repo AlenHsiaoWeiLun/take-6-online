@@ -6,6 +6,28 @@
   "outputDirectory": "apps/web/dist",
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "bullheads.vercel.app"
+        }
+      ],
+      "destination": "https://bullheads.alenhsiao.com/",
+      "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "bullheads-online.vercel.app"
+        }
+      ],
+      "destination": "https://bullheads.alenhsiao.com/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
